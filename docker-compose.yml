@@ -1,0 +1,47 @@
+version: '3.8'
+services:
+
+  # The Application
+  pure-php:
+    container_name: pure-php
+    build:
+      context: ./
+      dockerfile: docker/php/Dockerfile
+    volumes:
+      - ./:/var/www/html
+    environment:
+      - "DB_PORT=3306"
+      - "DB_HOST=pure-mysql"
+    links:
+      - pure-mysql
+
+  pure-nginx:
+    image: nginx
+    container_name: pure-nginx
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./:/var/www/html
+    ports:
+      - 888:80
+    links:
+      - pure-php
+      - pure-mysql
+
+  # The Database
+  pure-mysql:
+    image: mysql:5.7
+    container_name: pure-mysql
+    environment:
+      - "MYSQL_DATABASE=pure"
+      - "MYSQL_USER=pure-user"
+      - "MYSQL_PASSWORD=secret"
+      - "MYSQL_ROOT_PASSWORD=secret"
+    volumes:
+      - ./docker/mysql/:/etc/mysql/conf.d/
+      - ./docker/mysql/log:/var/log/mysql/
+    entrypoint:
+      sh -c "
+      echo 'CREATE DATABASE IF NOT EXISTS pure' > /docker-entrypoint-initdb.d/init.sql;
+      /usr/local/bin/docker-entrypoint.sh --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --sql-mode=''"
+    ports:
+        - 33062:3306

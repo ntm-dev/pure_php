@@ -1,0 +1,79 @@
+2022-01-28T17:41:20.611423Z	   11 Connect	pure-user@pure-php.pure_php_default on pure using TCP/IP
+2022-01-28T17:41:20.624605Z	   11 Query	SELECT name FROM users
+2022-01-28T17:41:29.136455Z	   11 Quit	
+2022-01-28T17:41:40.991593Z	   12 Connect	pure-user@pure-php.pure_php_default on pure using TCP/IP
+2022-01-28T17:41:40.995249Z	   12 Query	SELECT name FROM users
+2022-01-28T17:42:02.008109Z	   12 Query	SELECT * FROM users
+2022-01-28T17:42:35.404688Z	   12 Quit	
+2022-01-29T15:41:08.039451Z	   13 Connect	pure-user@pure-php.pure_php_default on pure using TCP/IP
+2022-01-29T15:41:08.045612Z	   13 Query	SELECT * FROM users
+2022-01-29T15:41:18.903511Z	   13 Query	SELECT * FROM users
+2022-01-29T15:41:20.904537Z	   13 Quit	
+2022-01-29T15:41:27.496726Z	   14 Connect	pure-user@pure-php.pure_php_default on pure using TCP/IP
+2022-01-29T15:41:27.501976Z	   14 Query	SELECT * FROM users
+2022-01-29T15:41:27.504700Z	   14 Query	SELECT * FROM users
+2022-01-29T15:41:27.521161Z	   14 Quit	
+2022-01-29T15:41:37.396238Z	   15 Connect	pure-user@pure-php.pure_php_default on pure using TCP/IP
+2022-01-29T15:41:37.397904Z	   15 Query	SELECT * FROM users
+2022-01-29T15:41:37.400231Z	   15 Query	SELECT * FROM users
+2022-01-29T15:41:37.412757Z	   15 Quit	
+2022-01-29T15:41:40.153016Z	   16 Connect	pure-user@pure-php.pure_php_default on pure using TCP/IP
+2022-01-29T15:41:40.154061Z	   16 Query	SELECT * FROM users
+2022-01-29T15:41:40.159624Z	   16 Query	SELECT * FROM users
+2022-01-29T15:41:40.173725Z	   16 Quit	
+2022-01-29T15:41:48.032817Z	   17 Connect	pure-user@pure-php.pure_php_default on pure using TCP/IP
+2022-01-29T15:41:48.034420Z	   17 Query	SELECT * FROM users
+2022-01-29T15:41:48.036351Z	   17 Query	SELECT * FROM users
+2022-01-29T15:41:48.054030Z	   17 Quit	
+2022-01-29T16:29:00.423533Z	   18 Connect	pure-user@pure-php.pure_php_default on pure using TCP/IP
+2022-01-29T16:29:00.430453Z	   18 Query	SELECT * FROM users
+2022-01-29T16:29:00.438823Z	   18 Query	SELECT * FROM users
+2022-01-29T16:29:00.472185Z	   18 Quit	
+2022-01-29T16:29:17.794644Z	   19 Connect	pure-user@pure-php.pure_php_default on pure using TCP/IP
+2022-01-29T16:29:17.798138Z	   19 Query	SELECT * FROM users
+2022-01-29T16:29:17.802501Z	   19 Query	SELECT * FROM users
+2022-01-29T16:29:17.818140Z	   19 Quit	
+2022-01-29T16:30:22.626415Z	   20 Connect	pure-user@pure-php.pure_php_default on pure using TCP/IP
+2022-01-29T16:30:22.636010Z	   20 Query	SELECT * FROM users
+2022-01-29T16:30:35.109369Z	   20 Query	SELECT * FROM users
+2022-01-29T16:30:35.963418Z	   20 Quit	
+/usr/sbin/mysqld, Version: 5.7.37-log (MySQL Community Server (GPL)). started with:
+Tcp port: 0  Unix socket: /var/run/mysqld/mysqld.sock
+Time                 Id Command    Argument
+2022-02-05T14:33:23.017016Z	    2 Connect	pure-user@pure-php.pure_php_default on pure using TCP/IP
+2022-02-05T14:33:23.029645Z	    2 Query	SELECT * FROM users
+2022-02-05T14:33:23.063653Z	    2 Query	SELECT * FROM users
+2022-02-05T14:33:23.137976Z	    2 Quit	
+/usr/sbin/mysqld, Version: 5.7.37-log (MySQL Community Server (GPL)). started with:
+Tcp port: 0  Unix socket: /var/run/mysqld/mysqld.sock
+Time                 Id Command    Argument
+/usr/sbin/mysqld, Version: 5.7.37-log (MySQL Community Server (GPL)). started with:
+Tcp port: 0  Unix socket: /var/run/mysqld/mysqld.sock
+Time                 Id Command    Argument
+/usr/sbin/mysqld, Version: 5.7.37-log (MySQL Community Server (GPL)). started with:
+Tcp port: 0  Unix socket: /var/run/mysqld/mysqld.sock
+Time                 Id Command    Argument
+2022-02-06T15:58:17.932096Z	    2 Connect	pure-user@pure-php.pure_php_default on pure using TCP/IP
+2022-02-06T15:58:17.954628Z	    2 Query	SELECT * FROM users
+2022-02-06T15:58:18.050400Z	    2 Query	SELECT * FROM users
+2022-02-06T15:58:18.074990Z	    2 Quit	
+2022-02-06T15:59:50.898896Z	    3 Connect	pure-user@pure-php.pure_php_default on pure using TCP/IP
+2022-02-06T15:59:50.944115Z	    3 Query	SELECT * FROM users
+2022-02-06T16:00:04.180025Z	    3 Query	SELECT * FROM users
+2022-02-06T16:00:09.152749Z	    3 Quit	
+2022-02-06T16:13:09.798555Z	    4 Connect	pure-user@pure-php.pure_php_default on pure using TCP/IP
+2022-02-06T16:13:09.805433Z	    4 Query	SELECT * FROM users
+2022-02-06T16:30:40.954916Z	    4 Quit	
+2022-02-06T16:30:46.846545Z	    5 Connect	pure-user@pure-php.pure_php_default on pure using TCP/IP
+2022-02-06T16:30:46.858859Z	    5 Query	SELECT * FROM users
+2022-02-06T16:31:46.340046Z	    5 Quit	
+2022-02-06T16:34:02.920568Z	    6 Connect	pure-user@pure-php.pure_php_default on pure using TCP/IP
+2022-02-06T16:34:02.924795Z	    6 Query	SELECT * FROM users
+2022-02-06T16:37:05.966508Z	    6 Quit	
+2022-02-06T16:41:58.052286Z	    7 Connect	pure-user@pure-php.pure_php_default on pure using TCP/IP
+2022-02-06T16:41:58.065447Z	    7 Query	SELECT * FROM users
+2022-02-06T16:44:30.590486Z	    7 Quit	
+2022-02-06T16:44:55.695552Z	    8 Connect	pure-user@pure-php.pure_php_default on pure using TCP/IP
+2022-02-06T16:44:55.698526Z	    8 Query	SELECT * FROM users
+2022-02-06T16:45:14.775975Z	    8 Query	SELECT * FROM users WHERE name like '%u%'
+2022-02-06T16:45:24.188524Z	    8 Quit	
