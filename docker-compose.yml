@@ -37,8 +37,9 @@ services:
       - "MYSQL_PASSWORD=secret"
       - "MYSQL_ROOT_PASSWORD=secret"
     volumes:
-      - ./docker/mysql/:/etc/mysql/conf.d/
+      - ./docker/mysql/config:/etc/mysql/conf.d/
       - ./docker/mysql/log:/var/log/mysql/
+      - ./docker/mysql/data:/var/lib/mysql/
     entrypoint:
       sh -c "
       echo 'CREATE DATABASE IF NOT EXISTS pure' > /docker-entrypoint-initdb.d/init.sql;
