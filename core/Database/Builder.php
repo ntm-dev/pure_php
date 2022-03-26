@@ -12,12 +12,10 @@ class Builder
     private static $instance;
 
     /**
-     * The database connection instance.
+     * Selected columns.
      *
-     * @var PDO
+     * @var array
      */
-    private static $connection;
-
     public static $selects = ['*'];
 
     /**
@@ -48,9 +46,14 @@ class Builder
      */
     public static $ofset;
 
+    /**
+     * Get database connection.
+     *
+     * @return PDO|false
+     */
     protected function getConnection()
     {
-        return self::$connection ?: $this->connect();
+        return static::$connection ?: $this->connect();
     }
 
     public function getInstance()
