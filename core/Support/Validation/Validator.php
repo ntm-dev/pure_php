@@ -8,7 +8,7 @@ use Support\Validation\ValidatorInterface;
 /**
  * Validator class.
  *
- * @author Nguyen The Manh <manh.nguyen3@ntq-solution.com.vn>
+ * @author Nguyen The Manh <nguyenthemanh26011996@gmail.com>
  */
 class Validator extends Rule implements ValidatorInterface
 {

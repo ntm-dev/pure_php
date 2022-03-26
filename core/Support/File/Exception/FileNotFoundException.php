@@ -5,7 +5,7 @@ namespace Support\File\Exception;
 /**
  * Thrown when a file was not found.
  *
- * @author Nguyen The Manh <manh.nguyen3@ntq-solution.com.vn>
+ * @author Nguyen The Manh <nguyenthemanh26011996@gmail.com>
  */
 class FileNotFoundException extends FileException
 {

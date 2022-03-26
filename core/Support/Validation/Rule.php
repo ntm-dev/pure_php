@@ -7,7 +7,7 @@ use Support\Helper\Str;
 /**
  * Define rule for validation.
  *
- * @author Nguyen The Manh <manh.nguyen3@ntq-solution.com.vn>
+ * @author Nguyen The Manh <nguyenthemanh26011996@gmail.com>
  */
 class Rule
 {

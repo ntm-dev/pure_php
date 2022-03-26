@@ -9,7 +9,7 @@ use Support\File\Exception\FileNotFoundException;
 /**
  * A file in the file system.
  *
- * @author Nguyen The Manh <manh.nguyen3@ntq-solution.com.vn>
+ * @author Nguyen The Manh <nguyenthemanh26011996@gmail.com>
  */
 class FileSystem extends \SplFileInfo
 {
