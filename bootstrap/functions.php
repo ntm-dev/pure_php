@@ -23,6 +23,11 @@ function public_path()
     return root_path() . "/public";
 }
 
+function collect($data)
+{
+    return new Core\Support\Helper\Collection($data);
+}
+
 function config($key, $default = null)
 {
     $dotenv = Dotenv\Dotenv::createImmutable(root_path());
