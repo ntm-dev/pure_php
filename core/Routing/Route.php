@@ -2,28 +2,94 @@
 
 namespace Core\Routing;
 
-use App\Routing\RoureNotFoundException;
+use Core\Routing\RoureNotFoundException;
 
 class Route
 {
     private static $routes = [];
 
-    public static function get($url, $callback)
+    /**
+     * Register a new GET route with the router.
+     *
+     * @param  string $uri
+     * @param  array|string|callable|null $action
+     * @return array
+     */
+    public static function get($uri, $action)
     {
-        self::$routes[$url] = $callback;
+        return self::addRoute(['GET', 'HEAD'], $uri, $action);
+    }
+
+    /**
+     * Register a new POST route with the router.
+     *
+     * @param  string $uri
+     * @param  array|string|callable|null  $action
+     * @return array
+     */
+    public static function post($uri, $action = null)
+    {
+        return self::addRoute('POST', $uri, $action);
+    }
+
+    /**
+     * Add a route to the underlying route.
+     *
+     * @param  array|string $methods
+     * @param  string $uri
+     * @param  array|string|callable|null $action
+     * @return array
+     */
+    public static function addRoute($methods, $uri, $action)
+    {
+        if (is_array($methods)) {
+            foreach ($methods as $method) {
+                self::$routes[$method][$uri] = $action;
+            }
+        } elseif (is_string($methods)) {
+            self::$routes[$methods][$uri] = $action;
+        }
+
+        return self::$routes;
     }
 
     public static function dispatch()
     {
-        if (!array_key_exists($_SERVER['REQUEST_URI'], self::$routes)) {
+        if (!array_key_exists($_SERVER['REQUEST_URI'], self::getRouteList())) {
+            $publicLocation = public_path() . $_SERVER['REQUEST_URI'];
+            if (file_exists($publicLocation)) {
+                return readfile($publicLocation);
+            }
+
             throw new RoureNotFoundException($_SERVER['REQUEST_URI']);
         }
+
         self::resolveRoute();
+    }
+
+    private static function getRouteList($requestMethod = '')
+    {
+        return self::$routes[$requestMethod ?: $_SERVER['REQUEST_METHOD']];
+    }
+
+    private static function getRoute($uri = '')
+    {
+        return self::$routes[self::getRequestMethod()][$uri ?: $_SERVER['REQUEST_URI']];
+    }
+
+    private static function getCurrentRoute()
+    {
+        return self::getRoute();
+    }
+
+    private static function getRequestMethod()
+    {
+        return $_SERVER['REQUEST_METHOD'];
     }
 
     private static function resolveRoute()
     {
-        $callback = self::$routes[$_SERVER['REQUEST_URI']];
+        $callback = self::getCurrentRoute();
         if ($callback instanceof \Closure) {
             return $callback();
         }
