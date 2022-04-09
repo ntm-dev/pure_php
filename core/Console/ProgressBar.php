@@ -4,74 +4,76 @@ namespace Core\Console;
 
 use Core\Console\Formater;
 
-class ProgressBar
+/**
+ * ProgressBar class.
+ *
+ * @author Nguyen The Manh <nguyenthemanh26011996@gmail.com>
+ */
+final class ProgressBar
 {
     /** Fill character */
-    private const FILL_CHAR = "▓";
+    const FILL_CHAR = "▓";
 
     /** Not fill character */
-    private const NOT_FILL_CHAR = "░";
+    const NOT_FILL_CHAR = "░";
 
     /** Max length for progress bar */
-    private const BAR_LENGTH = 50;
+    const BAR_LENGTH = 50;
 
-    /** Color code for success bar */
-    private const SUCCESSS_COLOR_CODE = "\e[38;5;34m";
+    /** @var int Max step of progress bar */
+    private $maxProcess = 0;
 
-    /** Color code for inprogress bar */
-    private const INPROGRESS_COLOR_CODE = "\e[38;5;202m";
+    /** @var int Current step of progress bar */
+    private $currenProcess = 0;
 
-    /** Max step of progress bar */
-    private int $maxProcess = 0;
+    /** @var bool End status of progress bar */
+    private $endProgress = false;
 
-    /** Current step of progress bar */
-    private int $currenProcess = 0;
+    /** @var string Process bar string */
+    private  $progressBar = "";
 
-    /** End status of progress bar */
-    private bool $endProgress = false;
-
-    /** Process bar string */
-    private string $progressBar = "";
+    /** Colors list */
+    private $colors = [];
 
     /** Init a progress bar */
-    public function __construct(int $max)
+
+    public function __construct($max)
     {
         $this->maxProcess = $max;
+        $this->initColorCode();
     }
 
-    /**
-     * Start and show progress bar.
-     *
-     * @return void
-     */
+    private function initColorCode()
+    {
+        for ($i = 196; $i <= 231; $i++) {
+            $this->colors[] = $i;
+        }
+        for ($i = 123; $i >= 119; $i--) {
+            for ($j = 0; $j < 3; $j++) {
+                $this->colors[] = $i - 36 * $j;
+            }
+        }
+    }
+
+    private function getColorCode($code)
+    {
+        return "\e[38;5;{$code}m";
+    }
+
     public function start()
     {
         echo "\n";
-        echo $this->progressBar = static::INPROGRESS_COLOR_CODE
-                            . " 0/{$this->maxProcess} "
-                            . Formater::ESCAPE
-                            . " ["
-                            . static::INPROGRESS_COLOR_CODE
-                            . $this->createProgress(0)
-                            . Formater::ESCAPE
-                            . "]"
-                            . static::INPROGRESS_COLOR_CODE . "0 %"
-                            . Formater::ESCAPE;
+        fprintf(STDOUT, "\033[?25l"); // hide cursor
+        $this->showProcess(0);
     }
 
-    /**
-     * Create progress.
-     *
-     * @param  int $percent
-     * @return string
-     */
-    private function createProgress(int $percent)
+    private function createProgress($percent)
     {
         $bar = '';
         if ($percent >= 100) {
             $percent = 100;
         }
-        $fillPoint = floor($percent / 2);
+        $fillPoint = floor($percent / (floor(100 / static::BAR_LENGTH)));
         for ($i = 0; $i < $fillPoint; $i++) {
             $bar .= static::FILL_CHAR;
         }
@@ -83,47 +85,48 @@ class ProgressBar
         return $bar;
     }
 
-    /**
-     * Advance exist progress bar.
-     *
-     * @param  int $step
-     * @return void
-     */
-    public function advance(int $step = 1)
+    private function getBackward($percent)
     {
-        $this->currenProcess += $step;
-        $percent = floor($this->currenProcess * 100 / $this->maxProcess);
-        $bar = $this->createProgress($percent);
-
         $backward = (strlen($this->progressBar) + 2);
         if ($percent < 10) {
             $backward++;
         }
-        $backward = "\033[{$backward}D ";
 
-        $colorCode = $percent >= 100 ? static::SUCCESSS_COLOR_CODE : static::INPROGRESS_COLOR_CODE;
+        return  "\033[{$backward}D ";
+    }
+
+    private function showProcess($percent)
+    {
+        $backward = $this->getBackward($percent);
+        $bar = $this->createProgress($percent);
+
+        $colorCode = $this->getColorCode($this->colors[floor($percent / 2)]);
 
         $total = "{$this->currenProcess}/" . ($this->currenProcess > $this->maxProcess ? $this->currenProcess : $this->maxProcess);
         echo $this->progressBar = "{$backward}{$colorCode} {$total} "
-                            . Formater::ESCAPE
-                            . " [{$colorCode}{$bar}"
-                            . Formater::ESCAPE
-                            . "] {$colorCode}{$percent} %"
-                            . Formater::ESCAPE;
+            . Formater::ESCAPE
+            . " [{$colorCode}{$bar}"
+            . Formater::ESCAPE
+            . "] {$colorCode}{$percent} %"
+            . Formater::ESCAPE;
+    }
+
+    public function advance($step = 1)
+    {
+        $this->currenProcess += $step;
+        $percent = floor($this->currenProcess * 100 / $this->maxProcess);
+
+        $this->showProcess($percent);
 
         if ($percent >= 100 && !$this->endProgress) {
             $this->endProgress = true;
         }
     }
 
-    /**
-     * Finish progress bar and show break line.
-     *
-     * @return void
-     */
-    public function finish()
+    public function __destruct()
     {
         $this->endProgress = true;
         echo "\n";
+        fprintf(STDOUT, "\033[?25h"); //show cursor
     }
 }
