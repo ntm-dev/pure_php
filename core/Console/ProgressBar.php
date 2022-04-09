@@ -55,8 +55,14 @@ final class ProgressBar
         }
     }
 
-    private function getColorCode($code)
+    private function getColorCode($percent)
     {
+        $code = floor($percent / 2);
+        if (!isset($this->colors[$code])) {
+            $code = $this->colors[count($this->colors) - 1];
+        } else {
+            $code = $this->colors[$code];
+        }
         return "\e[38;5;{$code}m";
     }
 
@@ -100,7 +106,7 @@ final class ProgressBar
         $backward = $this->getBackward($percent);
         $bar = $this->createProgress($percent);
 
-        $colorCode = $this->getColorCode($this->colors[floor($percent / 2)]);
+        $colorCode = $this->getColorCode($percent);
 
         $total = "{$this->currenProcess}/" . ($this->currenProcess > $this->maxProcess ? $this->currenProcess : $this->maxProcess);
         echo $this->progressBar = "{$backward}{$colorCode} {$total} "
