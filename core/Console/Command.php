@@ -174,7 +174,7 @@ class Command
      */
     public function progressFinish()
     {
-        $this->isExistPogressBar();
+        $this->isExistProgressBar();
 
         return $this->progressBar->finish();
     }

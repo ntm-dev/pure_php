@@ -68,8 +68,7 @@ final class ProgressBar
 
     public function start()
     {
-        echo "\n";
-        fprintf(STDOUT, "\033[?25l"); // hide cursor
+        echo "\n\033[?25l"; // show break line and hide cursor
         $this->showProcess(0);
     }
 
@@ -132,7 +131,6 @@ final class ProgressBar
     public function __destruct()
     {
         $this->endProgress = true;
-        echo "\n";
-        fprintf(STDOUT, "\033[?25h"); //show cursor
+        echo "\033[?25h\n"; //show cursor and break line
     }
 }
