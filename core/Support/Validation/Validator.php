@@ -1,23 +1,30 @@
 <?php
 
-namespace Support\Validation;
+namespace Core\Support\Validation;
 
-use Support\Validation\Rule;
-use Support\Validation\ValidatorInterface;
+use RuntimeException;
+use Core\Support\Helper\Str;
+use Core\Support\Validation\Rule;
+use Core\Support\Validation\ValidatorInterface;
+use Core\Support\Trait\CallStaticAble;
 
 /**
  * Validator class.
  *
  * @author Nguyen The Manh <nguyenthemanh26011996@gmail.com>
  */
-class Validator extends Rule implements ValidatorInterface
+class Validator implements ValidatorInterface
 {
+    use CallStaticAble;
+
+    /** Alias method prefix */
+    protected const ALIAS_METHOD_PREFIX = ['get', 'exec'];
+
     /** @var \ArrayObject requests*/
     protected static $requests;
 
     /** @var array errors*/
     protected static $errors = [];
-
 
     /** @var array rule for validation */
     protected static $rules;
@@ -40,10 +47,7 @@ class Validator extends Rule implements ValidatorInterface
     public function __construct($data = [])
     {
         $data = empty($data) ? $_REQUEST : $data;
-        self::$requests = new \ArrayObject($data);
-        foreach ($data as $key => $value) {
-            self::$requests->{$key} = $value;
-        }
+        self::$requests = collect($data);
     }
 
     /**
@@ -85,10 +89,10 @@ class Validator extends Rule implements ValidatorInterface
                 $rule($attribute, $attributeValue, $fail);
             } else {
                 $callable = $this->extractMethod($rule);
-                $result = call_user_func_array([$this, "validate{$callable['method']}"], [$attributeValue, $callable['target']]);
+                $result = $this->execDefinedRule($attributeValue, $callable);
                 if (!$result) {
                     $this->setError($attribute, $callable['method']);
-                } elseif ( ($callable['method'] == "RequiredIf") && !$this->validateRequired($attributeValue)) {
+                } elseif (($callable['method'] == "requiredIf") && !$this->execDefinedRule($attributeValue, $callable)) {
                     break;
                 }
             }
@@ -96,6 +100,21 @@ class Validator extends Rule implements ValidatorInterface
                 break;
             }
         }
+    }
+
+    /**
+     * Exectute defined rule
+     *
+     * @param mixed $attributeValue
+     * @param array $callable [method => target value]
+     */
+    private function execDefinedRule($attributeValue, $callable)
+    {
+        if (method_exists(Rule::class, $callable['method']) && (new \ReflectionMethod(Rule::class, $callable['method']))->isPublic()) {
+            return call_user_func_array([new Rule, $callable['method']], [$attributeValue, $callable['target']]);
+        }
+
+        throw new \BadMethodCallException("Method [{$callable['method']}] does not exist or is not accessible in " . Rule::class);
     }
 
     /**
@@ -125,14 +144,14 @@ class Validator extends Rule implements ValidatorInterface
     {
         if (!preg_match('/:/', $rule)) {
             return [
-                'method' => ucfirst($rule),
+                'method' => Str::camel($rule),
                 'target' => null,
             ];
         }
         $pos = strpos($rule, ':');
         $target = explode(',', substr($rule, $pos + 1));
         return [
-            'method' => ucfirst(substr($rule, 0, $pos)),
+            'method' => Str::camel($rule),
             'target' => (count($target) > 1) ? $target : $target[0],
         ];
     }
@@ -157,6 +176,7 @@ class Validator extends Rule implements ValidatorInterface
             }
             $result = $result[$value];
         }
+
         return $result;
     }
 
@@ -167,7 +187,7 @@ class Validator extends Rule implements ValidatorInterface
      */
     public function rules()
     {
-        throw new \RuntimeException('Validator does not implement rules method.');
+        throw new RuntimeException('Validator does not implement rules method.');
     }
 
     /**
@@ -178,7 +198,7 @@ class Validator extends Rule implements ValidatorInterface
     public function messages()
     {
         if (!empty($this->rules())) {
-            throw new \RuntimeException('Validator does not implement messages method.');
+            throw new RuntimeException('Validator does not implement messages method.');
         }
     }
 
@@ -292,24 +312,5 @@ class Validator extends Rule implements ValidatorInterface
         } elseif ($name == 'errors') {
             return $this->getErrors();
         }
-    }
-
-    /**
-     * Is triggered when invoking inaccessible methods in a static context.
-     */
-    public static function __callStatic($name, $arguments)
-    {
-        $instance = call_user_func_array('self::getInstance', $arguments);
-
-        if (method_exists($instance, "get" . ucfirst($name))) {
-            $name = "get" . ucfirst($name);
-        } elseif (method_exists($instance, "exec" . ucfirst($name))) {
-            $name = "exec" . ucfirst($name);
-        }
-        if (method_exists($instance, $name) && (new \ReflectionMethod($instance, $name))->isPublic()) {
-            return call_user_func_array([$instance, $name], $arguments);
-        }
-
-        throw new \BadMethodCallException("Method [$name] does not exist or is not accessible");
     }
 }

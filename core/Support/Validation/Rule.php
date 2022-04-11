@@ -1,16 +1,24 @@
 <?php
 
-namespace Support\Validation;
+namespace Core\Support\Validation;
 
-use Support\Helper\Str;
+use ReflectionMethod;
+use BadMethodCallException;
+use Core\Support\Helper\Str;
+use Core\Support\Trait\CallStaticAble;
 
 /**
  * Define rule for validation.
  *
  * @author Nguyen The Manh <nguyenthemanh26011996@gmail.com>
  */
-class Rule
+final class Rule
 {
+    use CallStaticAble;
+
+    /** Alias method prefix */
+    public const ALIAS_METHOD_PREFIX = ['is', 'validate'];
+
     /** @var \ArrayObject requests*/
     protected static $requests;
 
@@ -19,7 +27,7 @@ class Rule
      *
      * @param  mixed  $value
      */
-    public function validateRequired($value)
+    public function required($value)
     {
         if (is_null($value)) {
             return false;
@@ -39,20 +47,20 @@ class Rule
      * @param  mixed  $value
      * @param  array  $parameters [filed_name, $value]
      */
-    public function validateRequiredIf($value, $parameters)
+    public function requiredIf($value, $parameters)
     {
         $parameters = is_string($parameters) ? [$parameters] : $parameters;
         $requireField = array_shift($parameters);
 
-        if ( !$this->validateRequired(static::$requests->{$requireField}) ) {
+        if (!$this->required(static::$requests->{$requireField})) {
             return true;
         }
 
-        if ( !in_array(static::$requests->{$requireField}, $parameters) ) {
+        if (!in_array(static::$requests->{$requireField}, $parameters)) {
             return true;
         }
 
-        return $this->validateRequired($value);
+        return $this->required($value);
     }
 
     /**
@@ -61,7 +69,7 @@ class Rule
      * @param  mixed  $value
      * @return bool
      */
-    public function validateAlpha($value)
+    public function alpha($value)
     {
         return is_string($value) && preg_match('/^[\pL\pM]+$/u', $value);
     }
@@ -72,9 +80,9 @@ class Rule
      * @param  mixed  $value
      * @return bool
      */
-    public function validateAlphaDash($value)
+    public function alphaDash($value)
     {
-        if (! is_string($value) && ! is_numeric($value)) {
+        if (!is_string($value) && !is_numeric($value)) {
             return false;
         }
 
@@ -87,9 +95,9 @@ class Rule
      * @param  mixed  $value
      * @return bool
      */
-    public function validateAlphaNum($value)
+    public function alphaNum($value)
     {
-        if (! is_string($value) && ! is_numeric($value)) {
+        if (!is_string($value) && !is_numeric($value)) {
             return false;
         }
 
@@ -102,9 +110,9 @@ class Rule
      * @param  mixed  $value
      * @return bool
      */
-    public function validateArray($value)
+    public function array($value)
     {
-        if (! is_array($value)) {
+        if (!is_array($value)) {
             return false;
         }
 
@@ -117,7 +125,7 @@ class Rule
      * @param  mixed  $value
      * @return bool
      */
-    public function validateBoolean($value)
+    public function boolean($value)
     {
         $acceptable = [true, false, 0, 1, '0', '1'];
 
@@ -130,13 +138,13 @@ class Rule
      * @param  mixed  $value
      * @return bool
      */
-    public function validateDate($value)
+    public function date($value)
     {
         if ($value instanceof \DateTimeInterface) {
             return true;
         }
 
-        if ((! is_string($value) && ! is_numeric($value)) || strtotime($value) === false) {
+        if ((!is_string($value) && !is_numeric($value)) || strtotime($value) === false) {
             return false;
         }
 
@@ -152,16 +160,16 @@ class Rule
      * @param  array!string  $parameters
      * @return bool
      */
-    public function validateDateFormat($value, $parameters)
+    public function dateFormat($value, $parameters)
     {
-        if (! is_string($value) && ! is_numeric($value)) {
+        if (!is_string($value) && !is_numeric($value)) {
             return false;
         }
 
         $parameters = is_string($parameters) ? [$parameters] : $parameters;
 
         foreach ($parameters as $format) {
-            $date = \DateTime::createFromFormat('!'.$format, $value);
+            $date = \DateTime::createFromFormat('!' . $format, $value);
 
             if ($date && $date->format($format) == $value) {
                 return true;
@@ -178,7 +186,7 @@ class Rule
      * @param  string  $rule
      * @return void
      */
-    protected function validateNumeric($value)
+    protected function numeric($value)
     {
         if (is_numeric($value)) {
             return true;
@@ -193,7 +201,7 @@ class Rule
      * @param  mixed  $value
      * @return bool
      */
-    public function validateEmail($value)
+    public function email($value)
     {
         return !!filter_var($value, FILTER_VALIDATE_EMAIL);
     }
@@ -204,7 +212,7 @@ class Rule
      * @param  mixed  $value
      * @return bool
      */
-    public function validateHankaku($value)
+    public function hankaku($value)
     {
         return !!preg_match('/^[\p{Han}]+$/u', $value);
     }
@@ -215,7 +223,7 @@ class Rule
      * @param  mixed  $value
      * @return bool
      */
-    public function validateKatakana($value)
+    public function katakana($value)
     {
         return !!preg_match('/^[\p{Katakana}]+$/u', $value);
     }
@@ -226,7 +234,7 @@ class Rule
      * @param  mixed  $value
      * @return bool
      */
-    public function validateHiragana($value)
+    public function hiragana($value)
     {
         return !!preg_match('/^[\p{Hiragana}]+$/u', $value);
     }
@@ -237,7 +245,7 @@ class Rule
      * @param  mixed  $value
      * @return bool
      */
-    public function validateFurigana($value)
+    public function furigana($value)
     {
         return !!preg_match('/^[\p{Katakana}\p{Hiragana}]+$/u', $value);
     }
@@ -248,7 +256,7 @@ class Rule
      * @param  mixed  $value
      * @return bool
      */
-    public function validateJapanese($value)
+    public function japanese($value)
     {
         return !!preg_match('/^[\p{Katakana}\p{Hiragana}\p{Han}]+$/u', $value);
     }
@@ -266,7 +274,7 @@ class Rule
      * @param  mixed  $value
      * @return bool
      */
-    public function validateUrl($value)
+    public function url($value)
     {
         return !!filter_var($value, FILTER_VALIDATE_URL);
     }
@@ -278,7 +286,7 @@ class Rule
      * @param  mixed  $value
      * @return bool
      */
-    public function validateIp($value)
+    public function ip($value)
     {
         return filter_var($value, FILTER_VALIDATE_IP);
     }
@@ -290,7 +298,7 @@ class Rule
      * @param  int   $target
      * @return bool
      */
-    public function validateMin($value, $target)
+    public function min($value, $target)
     {
         if (is_array($value)) {
             return count($value) >= $target;
@@ -306,13 +314,13 @@ class Rule
     }
 
     /**
-    * Validate that an attribute has a minimum length.
-    *
-    * @param  mixed $value
-    * @param  int   $target
-    * @return bool
-    */
-    public function validateMinLength($value, $target)
+     * Validate that an attribute has a minimum length.
+     *
+     * @param  mixed $value
+     * @param  int   $target
+     * @return bool
+     */
+    public function minLength($value, $target)
     {
         if (is_array($value)) {
             return count($value) >= $target;
@@ -331,7 +339,7 @@ class Rule
      * @param  int   $target
      * @return bool
      */
-    public function validateMax($value, $target)
+    public function max($value, $target)
     {
         if (is_array($value)) {
             return count($value) <= $target;
@@ -353,7 +361,7 @@ class Rule
      * @param  int   $target
      * @return bool
      */
-    public function validateMaxLength($value, $target)
+    public function maxLength($value, $target)
     {
         if (is_array($value)) {
             return count($value) <= $target;
@@ -372,7 +380,7 @@ class Rule
      * @param  int   $target
      * @return bool
      */
-    public function validateLength($value, $target)
+    public function length($value, $target)
     {
         if (is_array($value)) {
             return count($value) == $target;
@@ -394,7 +402,7 @@ class Rule
      * @param  array $target
      * @return bool
      */
-    public function validateIn($value, $target)
+    public function in($value, $target)
     {
         if (!is_array($target)) {
             return false;
@@ -420,12 +428,32 @@ class Rule
      * @param  mixed $value
      * @return bool
      */
-    public function validateJson($value)
+    public function json($value)
     {
         if (!is_string($value)) {
             return false;
         }
 
         return is_null(json_decode($value));
+    }
+
+    public function __call($name, $arguments)
+    {
+        if (method_exists($this, $name) && (new ReflectionMethod($this, $name))->isPublic()) {
+            return call_user_func_array([$this, $name], $arguments);
+        }
+
+        foreach (self::ALIAS_METHOD_PREFIX as $prefix) {
+            $aliasMethod = Str::camel(ltrim($name, $prefix));
+            if (
+                preg_match("/^[$prefix]/", $name)
+                && method_exists($this, $aliasMethod)
+                && (new ReflectionMethod($this, $aliasMethod))->isPublic()
+            ) {
+                return call_user_func_array([$this, $aliasMethod], $arguments);
+            }
+        }
+
+        throw new BadMethodCallException("Method " . self::class . "->$name does not exist or is not accessible");
     }
 }

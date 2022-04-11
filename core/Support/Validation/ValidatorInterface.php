@@ -1,6 +1,6 @@
 <?php
 
-namespace Support\Validation;
+namespace Core\Support\Validation;
 
 /**
  * Validator interface.
