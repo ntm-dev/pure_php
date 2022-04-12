@@ -1,6 +1,6 @@
 <?php
 
-namespace Support\Helper;
+namespace Core\Support\Helper;
 
 /**
  * String helper.
@@ -50,7 +50,7 @@ class Str
             $value = preg_replace('/^[\s]+/u', '', $value);
         }
 
-        return trim($value);
+        return ltrim($value);
     }
 
     /**
@@ -66,7 +66,7 @@ class Str
             $value = preg_replace('/[\s]+$/u', '', $value);
         }
 
-        return trim($value);
+        return rtrim($value);
     }
 
     /**
@@ -214,7 +214,7 @@ class Str
         if (! ctype_lower($value)) {
             $value = preg_replace('/\s+/u', '', ucwords($value));
 
-            $value = static::lower(preg_replace('/(.)(?=[A-Z])/u', '$1'.$delimiter, $value));
+            $value = self::strtolower(preg_replace('/(.)(?=[A-Z])/u', '$1'.$delimiter, $value));
         }
 
         return $value;
