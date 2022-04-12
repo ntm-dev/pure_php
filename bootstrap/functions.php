@@ -28,10 +28,20 @@ function collect($data)
     return new Core\Support\Helper\Collection($data);
 }
 
+function view($template, $data = [])
+{
+    ini_set('display_errors', 1);
+    ini_set('display_startup_errors', 1);
+    error_reporting(E_ALL);
+    $view = new Core\Views\Smarty\Base($template);
+    $view->assign($data);
+
+    return $view->display();
+}
+
 function config($key, $default = null)
 {
-    $dotenv = Dotenv\Dotenv::createImmutable(root_path());
-    $dotenv->safeLoad();
+    $configs = Core\Application::getInstance()->getConfig();
 
-    return $_ENV[$key] ?? $default;
+    return $configs[$key] ?? $default;
 }

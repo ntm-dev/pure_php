@@ -2,6 +2,7 @@
 
 namespace Core;
 
+use Dotenv\Dotenv;
 use Core\ApplicationException;
 use Core\Routing\Route;
 
@@ -51,7 +52,15 @@ class Application
 
     private function loadConfig()
     {
-        $this->configs = require root_path() . "/config/app.php";
+        $configs = require root_path() . "/config/app.php";
+        $dotenv = Dotenv::createImmutable(root_path());
+        $dotenv->safeLoad();
+        $this->configs = array_merge($configs, $_ENV);
+    }
+
+    public function getConfig()
+    {
+        return $this->configs;
     }
 
     private function loadAlias()
