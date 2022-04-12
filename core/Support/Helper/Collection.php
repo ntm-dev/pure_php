@@ -5,6 +5,7 @@ namespace Core\Support\Helper;
 use Traversable;
 use ArrayAccess;
 use ArrayIterator;
+use JsonSerializable;
 use IteratorAggregate;
 
 /**
@@ -69,6 +70,70 @@ class Collection implements ArrayAccess, IteratorAggregate
     public function all()
     {
         return iterator_to_array($this->items);
+    }
+
+    /**
+     * Get the average value of a given key.
+     *
+     * @return float|int|null
+     */
+    public function avg()
+    {
+        $result = 0;
+        $items = $this->map(function ($value) {
+            return ($value);
+        });
+        if ($count = $items->count()) {
+            return $items->sum() / $count;
+        }
+    }
+
+    /**
+     * Get the sum of the given values.
+     *
+     * @return mixed
+     */
+    public function sum()
+    {
+        $result = 0;
+        $this->map(function ($value) use (&$result) {
+            if ($value instanceof self) {
+                return $value->sum();
+            }
+            // if ($this->isAllowedInitializationParameters($value)) {
+            //     return $result += (new self($value))->sum();
+            // }
+            return $result += $value;
+        });
+
+        return $result;
+    }
+
+    /**
+     * Run a map over each of the items.
+     *
+     * @template TMapValue
+     *
+     * @param  callable(TValue, TKey): TMapValue  $callback
+     * @return static<TKey, TMapValue>
+     */
+    public function map(callable $callback)
+    {
+        $items = $this->all();
+        $keys = array_keys($items);
+
+        $items = array_map($callback, $items, $keys);
+
+        return new static(array_combine($keys, $items));
+    }
+
+    public function pop()
+    {
+        $arrayItems = $this->all();
+        $results = array_pop($arrayItems);
+        $this->items = new ArrayIterator($arrayItems);
+
+        return $results;
     }
 
     /**
@@ -140,11 +205,18 @@ class Collection implements ArrayAccess, IteratorAggregate
     {
         if (is_array($items)) {
             return $items;
+        } elseif ($items instanceof JsonSerializable) {
+            return (array) $items->jsonSerialize();
         } elseif ($items instanceof Traversable) {
             return iterator_to_array($items);
         }
 
         return (array) $items;
+    }
+
+    private function isAllowedInitializationParameters($items)
+    {
+        return is_array($items) || ($items instanceof JsonSerializable) || ($items instanceof Traversable);
     }
 
     public function __call($name, $arguments)
