@@ -55,7 +55,7 @@ class Route
 
     public static function dispatch()
     {
-        if (!array_key_exists($_SERVER['REQUEST_URI'], self::getRouteList())) {
+        if (!array_key_exists($_SERVER['REQUEST_URI'], self::getRequestMethodRouteList())) {
             $publicLocation = public_path() . $_SERVER['REQUEST_URI'];
             if (file_exists($publicLocation)) {
                 return readfile($publicLocation);
@@ -67,9 +67,14 @@ class Route
         self::resolveRoute();
     }
 
-    private static function getRouteList($requestMethod = '')
+    private static function getRequestMethodRouteList($requestMethod = '')
     {
         return self::$routes[$requestMethod ?: $_SERVER['REQUEST_METHOD']];
+    }
+
+    public static function getRouteList()
+    {
+        return self::$routes;
     }
 
     private static function getRoute($uri = '')
