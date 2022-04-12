@@ -20,9 +20,9 @@ class Base extends Smarty
     private function bootstrap()
     {
         $this->setTemplateDir(root_path() . "/" .config('VIEW_TEMPLATE_DIR'));
-        $this->setCompileDir(root_path() . "/" .config('VIEW_COMPILE_DIR', __DIR__ . "/compile"));
+        $this->setCompileDir(config('VIEW_COMPILE_DIR', __DIR__ . "/compile"));
         // $this->setConfigDir(config('VIEW_CONFIG_DIR'));
-        $this->setCacheDir(root_path() . "/" .config('VIEW_CACHE_DIR', __DIR__ . "/cache"));
+        $this->setCacheDir(config('VIEW_CACHE_DIR', __DIR__ . "/cache"));
     }
 
     public function display($template = null, $cache_id = null, $compile_id = null, $parent = null)
