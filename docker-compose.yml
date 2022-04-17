@@ -20,6 +20,7 @@ services:
     container_name: pure-nginx
     volumes:
       - ./docker/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./docker/nginx/data:/var/log/nginx
       - ./:/var/www/html
     ports:
       - 888:80
