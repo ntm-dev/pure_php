@@ -30,10 +30,7 @@ function collect($data)
 
 function view($template, $data = [])
 {
-    ini_set('display_errors', 1);
-    ini_set('display_startup_errors', 1);
-    error_reporting(E_ALL);
-    $view = new Core\Views\Smarty\Base($template);
+    $view = new Core\Views\Base($template);
     $view->assign($data);
 
     return $view->display();
@@ -44,4 +41,9 @@ function config($key, $default = null)
     $configs = Core\Application::getInstance()->getConfig();
 
     return $configs[$key] ?? $default;
+}
+
+function app_name()
+{
+    return config('APP_NAME', "PURE PHP");
 }

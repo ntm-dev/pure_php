@@ -2,9 +2,11 @@
 
 namespace Core;
 
+use Throwable;
 use Dotenv\Dotenv;
 use Core\ApplicationException;
 use Core\Routing\Route;
+use Spatie\Ignition\Ignition;
 
 class Application
 {
@@ -95,10 +97,20 @@ class Application
 
     public function dispatch()
     {
-        try {
-            return Route::dispatch();
-        } catch (\Throwable $th) {
-            throw new ApplicationException($th);
-        }
+        $this->registerShutdownFunction();
+
+        return Route::dispatch();
+    }
+
+    private function registerShutdownFunction()
+    {
+        Ignition::make()->register();
+        register_shutdown_function(function() {
+            $lastError = error_get_last();
+            if (!is_null($lastError) && in_array($lastError['type'], [E_COMPILE_ERROR, E_CORE_ERROR, E_ERROR, E_PARSE])) {
+                $exception = new \Core\Error\ErrorHandle($lastError['message'], 0, $lastError, 0);
+                return call_user_func([Ignition::make(), 'handleException'], $exception);
+            }
+        });
     }
 }

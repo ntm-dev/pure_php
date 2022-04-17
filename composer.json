@@ -5,11 +5,10 @@
             "Core\\": "core/"
         }
     },
-    "require-dev": {
-        "symfony/var-dumper": "^3.4.40"
-    },
     "require": {
         "vlucas/phpdotenv": "^5.4",
-        "smarty/smarty": "^4.1"
+        "smarty/smarty": "^4.1",
+        "twig/twig": "^3.0",
+        "spatie/ignition": "^1.2"
     }
 }
