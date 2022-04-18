@@ -2,9 +2,7 @@
 
 namespace Core;
 
-use Throwable;
 use Dotenv\Dotenv;
-use Core\ApplicationException;
 use Core\Routing\Route;
 use Spatie\Ignition\Ignition;
 
@@ -43,15 +41,24 @@ class Application
         $this->bootstrap();
     }
 
+    /**
+     * Bootstrapt application
+     *
+     * @return void
+     */
     private function bootstrap()
     {
-        error_reporting(0);
         $this->loadConfig();
         $this->loadAlias();
         $this->loadRoutes();
         self::$instance = $this;
     }
 
+    /**
+     * Load configs.
+     *
+     * @return void
+     */
     private function loadConfig()
     {
         $configs = require root_path() . "/config/app.php";
@@ -60,11 +67,21 @@ class Application
         $this->configs = array_merge($configs, $_ENV);
     }
 
+    /**
+     * Get configs.
+     *
+     * @return array
+     */
     public function getConfig()
     {
         return $this->configs;
     }
 
+    /**
+     * Load aliases.
+     *
+     * @return void
+     */
     private function loadAlias()
     {
         $this->configs ?: $this->loadConfig();
@@ -74,6 +91,11 @@ class Application
         }
     }
 
+    /**
+     * Load routes.
+     *
+     * @return void
+     */
     private function loadRoutes()
     {
         require root_path() . "/routes/web.php";
@@ -95,6 +117,11 @@ class Application
         return static::$instance;
     }
 
+    /**
+     * Dispatch application.
+     *
+     * @return mixed;
+     */
     public function dispatch()
     {
         $this->registerShutdownFunction();
@@ -102,6 +129,11 @@ class Application
         return Route::dispatch();
     }
 
+    /**
+     * Register shutdown function.
+     *
+     * @return mixed
+     */
     private function registerShutdownFunction()
     {
         Ignition::make()->register();
