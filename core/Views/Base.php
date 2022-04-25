@@ -34,10 +34,10 @@ class Base implements ViewInterface
                 $this->view = new SmartyView($this->template);
                 break;
         }
-        $this->setDelimiter('<< ', ' >>');
+        $this->setDelimiter(config('VIEW_LEFT_DELIMITER', '{{'), config('VIEW_RIGHT_DELIMITER', '}}'));
     }
 
-    public function setdelimiter(string $leftDelimiter = '{{', string $rightDelimiter = '}}')
+    public function setDelimiter(string $leftDelimiter = '{{', string $rightDelimiter = '}}')
     {
         $this->view->setDelimiter($leftDelimiter, $rightDelimiter);
     }

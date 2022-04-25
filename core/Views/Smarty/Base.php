@@ -51,7 +51,7 @@ class Base extends ViewAbstract implements ViewInterface
 
     public function setDelimiter(string $leftDelimiter = '{{ ', string $rightDelimiter = ' }}')
     {
-        $this->view->setLeftDelimiter(preg_match("/\s$/", $leftDelimiter) ? $leftDelimiter : "$leftDelimiter ");
-        $this->view->setRightDelimiter(preg_match("/^\s/", $rightDelimiter) ? $rightDelimiter : " $rightDelimiter");
+        $this->view->setLeftDelimiter($leftDelimiter);
+        $this->view->setRightDelimiter($rightDelimiter);
     }
 }
