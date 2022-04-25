@@ -2,7 +2,12 @@
 
 namespace Core\Routing;
 
-use Core\Routing\RoureNotFoundException;
+use Throwable;
+use Exception;
+use BadMethodCallException;
+use ReflectionMethod;
+use Core\Http\Request;
+use Core\Http\Exception\NotFoundException as HttpNotFoundException;
 
 class Route
 {
@@ -55,13 +60,13 @@ class Route
 
     public static function dispatch()
     {
-        if (!array_key_exists($_SERVER['REQUEST_URI'], self::getRequestMethodRouteList())) {
-            $publicLocation = public_path() . $_SERVER['REQUEST_URI'];
+        if (!array_key_exists(Request::getInstance()->getPathInfo(), self::getRequestMethodRouteList())) {
+            $publicLocation = public_path() . Request::getInstance()->getPathInfo();
             if (file_exists($publicLocation)) {
                 return readfile($publicLocation);
             }
 
-            throw new RoureNotFoundException($_SERVER['REQUEST_URI']);
+            throw new HttpNotFoundException(Request::getInstance()->getPathInfo());
         }
 
         self::resolveRoute();
@@ -79,7 +84,7 @@ class Route
 
     private static function getRoute($uri = '')
     {
-        return self::$routes[self::getRequestMethod()][$uri ?: $_SERVER['REQUEST_URI']];
+        return self::$routes[self::getRequestMethod()][$uri ?: Request::getInstance()->getPathInfo()];
     }
 
     private static function getCurrentRoute()
@@ -112,12 +117,18 @@ class Route
 
         if (include "$controllerPath") {
             $controller = new $controllerName();
-            if (!in_array($method, get_class_methods($controller))) {
-                throw new \Exception("$method not found in $controllerName");
+            try {
+                $reflectionMethod = new ReflectionMethod($controller, $method);
+                if (! $reflectionMethod->isPublic()) {
+                    throw new Exception;
+                }
+            } catch (Throwable $th) {
+                throw new BadMethodCallException("$method not found in $controllerName");
             }
+
             return call_user_func_array([$controller, $method], []);
         }
 
-        throw new \BadFunctionCallException("$controllerName not found");
+        throw new BadMethodCallException("$controllerName not found");
     }
 }
