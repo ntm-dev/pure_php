@@ -5,6 +5,7 @@ namespace Core\Support\Trait;
 use ReflectionMethod;
 use BadMethodCallException;
 use Core\Support\Helper\Str;
+use Core\Pattern\Singleton;
 
 /**
  * CallStaticAble trait.
@@ -13,21 +14,7 @@ use Core\Support\Helper\Str;
  */
 trait CallStaticAble
 {
-    /** @var static */
-    private static $instance;
-
-    /**
-     * Get instance.
-     * 
-     * @return static
-     */
-    final public static function getInstance()
-    {
-        if (!self::$instance) {
-            self::$instance = new static;
-        }
-        return self::$instance;
-    }
+    use Singleton;
 
     /**
      * Is triggered when invoking inaccessible methods in a static context.

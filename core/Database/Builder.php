@@ -3,13 +3,11 @@
 namespace Core\Database;
 
 use PDO;
+use Core\Pattern\Singleton;
 use Core\Database\PDO\Connector;
-
 class Builder
 {
-    use Connector;
-
-    private static $instance;
+    use Connector, Singleton;
 
     /**
      * Selected columns.
@@ -54,11 +52,6 @@ class Builder
     protected function getConnection()
     {
         return static::$connection ?: $this->connect();
-    }
-
-    public function getInstance()
-    {
-        return self::$instance ?: (self::$instance = new static);
     }
 
     public function select(array $cols = ['*'])

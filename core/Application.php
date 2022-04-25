@@ -5,15 +5,12 @@ namespace Core;
 use Dotenv\Dotenv;
 use Core\Routing\Route;
 use Spatie\Ignition\Ignition;
+use Core\Http\Request;
+use Core\Pattern\Singleton;
 
 class Application
 {
-    /**
-     * The current globally available container (if any).
-     *
-     * @var static
-     */
-    protected static $instance;
+    use Singleton;
 
     /**
      * The registered type aliases.
@@ -36,6 +33,13 @@ class Application
      */
     protected $routes = [];
 
+    /**
+     * The registered type router.
+     *
+     * @var array
+     */
+    protected $request;
+
     public function __construct()
     {
         $this->bootstrap();
@@ -51,6 +55,7 @@ class Application
         $this->loadConfig();
         $this->loadAlias();
         $this->loadRoutes();
+        $this->request = new Request;
         self::$instance = $this;
     }
 
@@ -101,20 +106,6 @@ class Application
         require root_path() . "/routes/web.php";
 
         $this->routes = Route::getRouteList();
-    }
-
-    /**
-     * Get the globally available instance of the container.
-     *
-     * @return static
-     */
-    public static function getInstance()
-    {
-        if (is_null(static::$instance)) {
-            static::$instance = new static;
-        }
-
-        return static::$instance;
     }
 
     /**
