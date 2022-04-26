@@ -1,4 +1,10 @@
 {{extends file="./master.tpl"}}
+{{if !isset($status)}}
+    {{assign var="status" value=404}}
+{{/if}}
+{{if !isset($message)}}
+    {{assign var="message" value="Page Not Found."}}
+{{/if}}
 {{block name=title}}{{$message}}{{/block}}<!--Sorry, we're down for essential maintenance-->
 {{block name=data}}
     var data = [{
