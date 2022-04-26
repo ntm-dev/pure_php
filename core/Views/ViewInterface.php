@@ -8,4 +8,5 @@ interface ViewInterface
     public function setdelimiter(string $leftDelimiter = '{{', string $rightDelimiter = '}}');
     public function assign(array $data);
     public function display();
+    public function render();
 }

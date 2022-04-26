@@ -51,4 +51,9 @@ class Base implements ViewInterface
     {
         $this->view->display();
     }
+
+    public function render()
+    {
+        return $this->view->render();
+    }
 }

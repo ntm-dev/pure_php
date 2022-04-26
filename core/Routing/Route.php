@@ -69,7 +69,7 @@ class Route
             throw new HttpNotFoundException(Request::getInstance()->getPathInfo());
         }
 
-        self::resolveRoute();
+        return self::resolveRoute();
     }
 
     private static function getRequestMethodRouteList($requestMethod = '')
@@ -104,7 +104,7 @@ class Route
             return $callback();
         }
         if (is_string($callback)) {
-            self::handleController($callback);
+            return self::handleController($callback);
         }
     }
 
@@ -123,7 +123,7 @@ class Route
                     throw new Exception;
                 }
             } catch (Throwable $th) {
-                throw new BadMethodCallException("$method not found in $controllerName");
+                throw new BadMethodCallException("Method $controllerName::$method does exist");
             }
 
             return call_user_func_array([$controller, $method], []);

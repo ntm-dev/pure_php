@@ -53,7 +53,12 @@ class Base extends ViewAbstract implements ViewInterface
 
     public function display()
     {
-        echo $this->view->render("$this->template." . static::TEMPLATE_EXTENSION, $this->data);
+        echo $this->render();
+    }
+
+    public function render()
+    {
+        return $this->view->render("$this->template." . static::TEMPLATE_EXTENSION, $this->data);
     }
 
     public function setdelimiter(string $leftDelimiter = '{{', string $rightDelimiter = '}}')

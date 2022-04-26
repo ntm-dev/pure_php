@@ -33,7 +33,7 @@ function view($template, $data = [])
     $view = new Core\Views\Base($template);
     $view->assign($data);
 
-    return $view->display();
+    return $view->render();
 }
 
 function config($key, $default = null)
@@ -41,6 +41,11 @@ function config($key, $default = null)
     $configs = Core\Application::getInstance()->getConfig();
 
     return $configs[$key] ?? $default;
+}
+
+function abort(int $statusCode)
+{
+    throw new Core\Http\Request\Exception\NotFoundException('Not Found');
 }
 
 function app_name()

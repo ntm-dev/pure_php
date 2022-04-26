@@ -7,6 +7,7 @@ use Core\Routing\Route;
 use Spatie\Ignition\Ignition;
 use Core\Http\Request;
 use Core\Pattern\Singleton;
+use Core\Support\Facades\Response;
 
 class Application
 {
@@ -117,7 +118,9 @@ class Application
     {
         $this->registerShutdownFunction();
 
-        return Route::dispatch();
+        $response = Route::dispatch();
+
+        Response::setContent($response)->send();
     }
 
     /**
