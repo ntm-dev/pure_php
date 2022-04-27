@@ -5,7 +5,7 @@ namespace Core\Http\Exception;
 /**
  * Raised when a user sends a malformed request.
  */
-class NotFoundException extends \UnexpectedValueException implements RequestExceptionInterface
+class NotFoundException extends HttpException
 {
     /* http status code */
     const HTTP_STATUS_CODE = 404;
@@ -13,24 +13,8 @@ class NotFoundException extends \UnexpectedValueException implements RequestExce
     /* http response text */
     const HTTP_RESPONSE_TEXT = 'Page NOT FOUND!!!';
 
-    public function __construct(string $message = '', array $header = [])
+    public function __construct()
     {
-        $this->response($message, $header);
-        die;
-    }
-
-    /**
-     * Response error page
-     * 
-     * @param  string  $message
-     * @param  array   $header
-     */
-    private function response(string $message = '', array $header = [])
-    {
-        http_response_code(static::HTTP_STATUS_CODE);
-        return view('error.' . static::HTTP_STATUS_CODE, [
-            'status' => static::HTTP_STATUS_CODE,
-            'message' => static::HTTP_RESPONSE_TEXT,
-        ]);
+        parent::__construct(self::HTTP_RESPONSE_TEXT);
     }
 }

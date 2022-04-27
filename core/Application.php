@@ -8,6 +8,7 @@ use Spatie\Ignition\Ignition;
 use Core\Http\Request;
 use Core\Pattern\Singleton;
 use Core\Support\Facades\Response;
+use Core\Http\Exception\HttpException;
 
 class Application
 {
@@ -53,6 +54,7 @@ class Application
      */
     private function bootstrap()
     {
+        ini_set('display_errors', 0);
         $this->loadConfig();
         $this->loadAlias();
         $this->loadRoutes();
@@ -118,7 +120,14 @@ class Application
     {
         $this->registerShutdownFunction();
 
-        $response = Route::dispatch();
+        try {
+            $response = Route::dispatch();
+        } catch (\Throwable $th) {
+            if (! $th instanceof HttpException) {
+                throw $th;
+            }
+            $response = $th->response();
+        }
 
         Response::setContent($response)->send();
     }
