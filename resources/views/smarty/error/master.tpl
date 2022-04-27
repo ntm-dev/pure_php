@@ -133,18 +133,14 @@
                 position: relative;
                 top: 30.5vmin;
             }
-        }
 
-        @media only screen and (max-width: 600px) {
             .terminal-window header {
                 background: #E0E8F0;
                 height: 1.875vmin;
                 border-radius: .5vmin .5vmin 0 0;
                 padding-left: 1vmin;
             }
-        }
 
-        @media only screen and (max-width: 600px) {
             .terminal-window header .button {
                 width: .75vmin;
                 height: .75vmin;
@@ -152,27 +148,18 @@
                 display: inline-block;
                 border-radius: .5vmin;
             }
-        }
 
-        @media only screen and (max-width: 600px) {
             .terminal-window header .button.green {
                 background: #3BB662;
             }
-        }
 
-        @media only screen and (max-width: 600px) {
             .terminal-window header .button.yellow {
                 background: #E5C30F;
             }
-        }
 
-        @media only screen and (max-width: 600px) {
             .terminal-window header .button.red {
                 background: #E75448;
             }
-        }
-
-        @media only screen and (max-width: 600px) {
             .terminal-window section.terminal {
                 color: white;
                 font-family: Menlo, Monaco, "Consolas", "Courier New", "Courier";
@@ -185,6 +172,28 @@
                 top: 1.875vmin;
                 bottom: 0;
                 overflow: auto;
+            }
+        }
+
+        @media only screen and (max-width: 375px) {
+            .terminal-window {
+                width: 90%;
+                top: 18.5rem;
+                height: 40vmin;
+            }
+            .terminal-window header {
+                height: 4.875vmin;
+            }
+            .terminal-window header .button {
+                border-radius: 50%;
+            }
+            .terminal-window section.terminal {
+                top: 4.5vmin;
+                font-size: 3vmin;
+            }
+            .terminal-window header .button {
+                width: 3.75vmin;
+                height: 3.75vmin;
             }
         }
 
