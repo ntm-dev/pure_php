@@ -6,11 +6,14 @@ use App\Models\User;
 use Core\Support\Helper\Str;
 use Core\Support\Validation\Rule;
 use App\Requests\NewRequest;
+use Core\Support\Facades\Response;
 class HomeController extends BaseController
 {
     public function index()
     {
-        return view('welcome', ['a' => 'b']);
+        Response::setCookie('name', 'value', 30, "", "", true, true);
+        // abort(404);
+        return view('error.404', ['a' => 'b']);
         // $a = collect([
         //     ['foo' => 10],
         //     ['foo' => 10],
