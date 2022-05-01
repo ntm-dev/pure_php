@@ -123,58 +123,6 @@
         }
 
         /*Media for mobile responsive viewing*/
-        @media only screen and (max-width: 600px) {
-            .terminal-window {
-                text-align: left;
-                width: 37.5vmin;
-                height: 22.5vmin;
-                border-radius: .625vmin;
-                margin: auto;
-                position: relative;
-                top: 30.5vmin;
-            }
-
-            .terminal-window header {
-                background: #E0E8F0;
-                height: 1.875vmin;
-                border-radius: .5vmin .5vmin 0 0;
-                padding-left: 1vmin;
-            }
-
-            .terminal-window header .button {
-                width: .75vmin;
-                height: .75vmin;
-                margin: .625vmin .25vmin 0 0;
-                display: inline-block;
-                border-radius: .5vmin;
-            }
-
-            .terminal-window header .button.green {
-                background: #3BB662;
-            }
-
-            .terminal-window header .button.yellow {
-                background: #E5C30F;
-            }
-
-            .terminal-window header .button.red {
-                background: #E75448;
-            }
-            .terminal-window section.terminal {
-                color: white;
-                font-family: Menlo, Monaco, "Consolas", "Courier New", "Courier";
-                font-size: .6875vmin;
-                background: #30353A;
-                padding: .625vmin;
-                box-sizing: border-box;
-                position: absolute;
-                width: 100%;
-                top: 1.875vmin;
-                bottom: 0;
-                overflow: auto;
-            }
-        }
-
         @media only screen and (max-width: 375px) {
             .terminal-window {
                 width: 90%;
@@ -183,13 +131,17 @@
             }
             .terminal-window header {
                 height: 4.875vmin;
+                border-radius: 2vmin 2vmin 0 0;
+                padding-left: 0.425rem;
             }
             .terminal-window header .button {
                 border-radius: 50%;
+                margin: 0.15rem 0.15rem 0 0;
             }
             .terminal-window section.terminal {
-                top: 4.5vmin;
+                top: 5vmin;
                 font-size: 3vmin;
+                border-radius: 0 0 2vmin 2vmin;
             }
             .terminal-window header .button {
                 width: 3.75vmin;
