@@ -7,7 +7,7 @@ use ArrayIterator;
 use IteratorAggregate;
 use InvalidArgumentException;
 use Core\Pattern\Singleton;
-use Core\Http\Request\Exception\BadRequestException;
+use Core\Http\Exception\BadRequestException;
 
 class ServerBag implements IteratorAggregate, Countable
 {

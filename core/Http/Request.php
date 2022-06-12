@@ -15,7 +15,7 @@ class Request
      *
      * @var ArrayObject
      */
-    private ArrayObject $parameters;
+    private $parameters;
 
     /**
      * @var string
@@ -33,6 +33,13 @@ class Request
      * @var ServerBag
      */
     public $server;
+
+    /** 
+     * Request header.
+     *
+     * @var  array
+     */
+    public $headers = [];
 
     public function __construct()
     {
@@ -199,7 +206,7 @@ class Request
      */
     public function userAgent()
     {
-        return $this->headers->get('User-Agent');
+        return $this->headers['User-Agent'];
     }
 
     /**
@@ -237,7 +244,7 @@ class Request
 
     public function getHost(): string
     {
-        if (!$host = $this->headers->get('HOST')) {
+        if (!$host = $this->headers['HOST']) {
             if (!$host = $this->server->get('SERVER_NAME')) {
                 $host = $this->server->get('SERVER_ADDR', '');
             }
@@ -252,7 +259,7 @@ class Request
 
     public function getPort(): string
     {
-        if ($this->headers->get('HOST')) {
+        if ($this->headers['HOST']) {
             return $this->server->get('SERVER_PORT');
         }
 
@@ -276,7 +283,7 @@ class Request
      */
     public function pjax()
     {
-        return $this->headers->get('X-PJAX') == true;
+        return $this->headers['X-PJAX'] == true;
     }
 
 
@@ -286,7 +293,7 @@ class Request
      */
     public function isXmlHttpRequest(): bool
     {
-        return 'XMLHttpRequest' == $this->headers->get('X-Requested-With');
+        return 'XMLHttpRequest' == $this->headers['X-Requested-With'];
     }
 
     /**
