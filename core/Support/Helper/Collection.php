@@ -4,9 +4,9 @@ namespace Core\Support\Helper;
 
 use Traversable;
 use ArrayAccess;
-use ArrayIterator;
 use JsonSerializable;
 use IteratorAggregate;
+use Core\Support\Helper\ArrayIterator;
 
 /**
  * Collection helper.
@@ -59,7 +59,18 @@ class Collection implements ArrayAccess, IteratorAggregate
      */
     public function __construct($items = [])
     {
-        $this->items = new ArrayIterator($this->getArrayableItems($items));
+        $this->items = $this->newArrayIterator($items);
+    }
+
+    private function newArrayIterator(array $items = [])
+    {
+        foreach ($items as &$value) {
+            if ($this->isArrayable($value)) {
+                $value = $this->newArrayIterator($value);
+            }
+        }
+
+        return new ArrayIterator($this->getArrayableItems($items));
     }
 
     /**
@@ -214,9 +225,23 @@ class Collection implements ArrayAccess, IteratorAggregate
         return (array) $items;
     }
 
+    private function isArrayable($value)
+    {
+        return is_array($value) || $value instanceof JsonSerializable || $value instanceof Traversable;
+    }
+
     private function isAllowedInitializationParameters($items)
     {
         return is_array($items) || ($items instanceof JsonSerializable) || ($items instanceof Traversable);
+    }
+
+    public function __get($name)
+    {
+        if (!isset($this->items[$name])) {
+            throw new \Exception("Undefined property: " . static::class . "::$$name");
+        }
+
+        return $this->offsetGet($name);
     }
 
     public function __call($name, $arguments)
