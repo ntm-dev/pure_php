@@ -40,7 +40,7 @@ function config($key, $default = null)
 {
     $configs = Core\Application::getInstance()->getConfig();
 
-    return $configs[$key] ?? $default;
+    return Core\Support\Helper\Arr::get($configs, $key);
 }
 
 function abort(int $statusCode)

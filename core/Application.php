@@ -9,6 +9,7 @@ use Core\Http\Request;
 use Core\Pattern\Singleton;
 use Core\Support\Facades\Response;
 use Core\Http\Exception\HttpException;
+use Core\Support\Storage;
 
 class Application
 {
@@ -69,7 +70,12 @@ class Application
      */
     private function loadConfig()
     {
-        $configs = require root_path() . "/config/app.php";
+        $configs = [];
+        $configFiles = Storage::files(root_path() . "/config", "*.php");
+        foreach ($configFiles as $file) {
+            $fileName = substr($file, strrpos($file, "/") + 1);
+            $configs += [substr($fileName, 0, strrpos($fileName, ".")) => require $file];
+        }
         $dotenv = Dotenv::createImmutable(root_path());
         $dotenv->safeLoad();
         $this->configs = array_merge($configs, $_ENV);
@@ -93,7 +99,7 @@ class Application
     private function loadAlias()
     {
         $this->configs ?: $this->loadConfig();
-        $this->aliases = $this->configs['aliases'];
+        $this->aliases = $this->configs['app']['aliases'];
         foreach ($this->aliases as $alias => $class) {
             class_alias($class, $alias);
         }
