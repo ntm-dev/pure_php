@@ -2,9 +2,14 @@
 
 namespace App\Models;
 
-use Core\Database\BaseModel;
+use Core\Database\Model as BaseModel;
 
 class User extends BaseModel
 {
-    protected $table = 'users';
+    /**
+     * The table associated with the model.
+     *
+     * @var string
+     */
+    public $table = 'users';
 }
