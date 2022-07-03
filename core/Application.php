@@ -70,14 +70,15 @@ class Application
      */
     private function loadConfig()
     {
+        $dotenv = Dotenv::createUnsafeImmutable(root_path());
+        $dotenv->load();
+
         $configs = [];
         $configFiles = Storage::files(root_path() . "/config", "*.php");
         foreach ($configFiles as $file) {
             $fileName = substr($file, strrpos($file, "/") + 1);
             $configs += [substr($fileName, 0, strrpos($fileName, ".")) => require $file];
         }
-        $dotenv = Dotenv::createImmutable(root_path());
-        $dotenv->safeLoad();
         $this->configs = array_merge($configs, $_ENV);
     }
 
