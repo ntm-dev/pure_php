@@ -4,7 +4,7 @@ namespace Core\Database;
 
 use Core\Database\Model;
 use Core\Pattern\Singleton;
-use Core\Database\PDO\Connector;
+use Core\Database\Connectors\Connector;
 
 class Builder
 {
@@ -143,13 +143,33 @@ class Builder
         return $this->fetchAll();
     }
 
-    private function query(\PDOStatement $stmt = null)
+    private function query(\PDO $con = null)
     {
-        $sth = $stmt ?: $this->getConnection()->prepare($this->buildSelectQuery());
+        $statement = ($con ?: $this->getConnection())->prepare($this->buildSelectQuery());
 
-        $sth->execute($this->bindings['where']);
+        $this->bindValues($statement, $this->bindings['where']);
 
-        return $sth;
+        $statement->execute();
+
+        return $statement;
+    }
+
+    /**
+     * Bind values to their parameters in the given statement.
+     *
+     * @param  \PDOStatement  $statement
+     * @param  array  $bindings
+     * @return void
+     */
+    public function bindValues($statement, $bindings)
+    {
+        foreach ($bindings as $key => $value) {
+            $statement->bindValue(
+                is_string($key) ? $key : $key + 1,
+                $value,
+                is_int($value) ? \PDO::PARAM_INT : \PDO::PARAM_STR
+            );
+        }
     }
 
     private function fetchAll(\PDOStatement $stmt = null)
