@@ -38,9 +38,7 @@ function view($template, $data = [])
 
 function config($key, $default = null)
 {
-    $configs = Core\Application::getInstance()->getConfig();
-
-    return Core\Support\Helper\Arr::get($configs, $key);
+    return Core\Support\Helper\Arr::get(Core\Application::getInstance()->getConfig(), $key, $default);
 }
 
 function abort(int $statusCode)
