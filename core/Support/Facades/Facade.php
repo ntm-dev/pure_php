@@ -16,7 +16,7 @@ abstract class Facade
     /**
      * Get the registered name of the component.
      *
-     * @return array
+     * @return string
      *
      * @throws \RuntimeException
      */
@@ -25,15 +25,13 @@ abstract class Facade
         throw new RuntimeException('Facade does not implement getFacadeAccessor method.');
     }
 
-    protected static function resolvedInstance(array $accessor)
+    protected static function resolvedInstance(string $accessor)
     {
-        $name = array_keys($accessor)[0];
-
-        if (isset(static::$resolvedInstance[$name])) {
-            return static::$resolvedInstance[$name];
+        if (isset(static::$resolvedInstance[$accessor])) {
+            return static::$resolvedInstance[$accessor];
         }
 
-        return static::$resolvedInstance[$name] = new $accessor[$name];
+        return static::$resolvedInstance[$accessor] = new $accessor;
     }
 
     /**

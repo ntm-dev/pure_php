@@ -10,10 +10,10 @@ class Response extends Facade
     /**
      * Get the registered name of the component.
      *
-     * @return array
+     * @return string
      */
     protected static function getFacadeAccessor()
     {
-        return ['Response' => RootResponse::class];
+        return RootResponse::class;
     }
 }
