@@ -5,9 +5,8 @@ namespace Core\Http;
 use InvalidArgumentException;
 use Core\Http\ServerBag;
 use Core\Http\ResponseTrait;
-use Core\Support\Facades\Facade;
 
-class Response extends Facade
+class Response 
 {
     use ResponseTrait;
 

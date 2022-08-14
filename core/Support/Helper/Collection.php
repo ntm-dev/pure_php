@@ -90,7 +90,6 @@ class Collection implements ArrayAccess, IteratorAggregate
      */
     public function avg()
     {
-        $result = 0;
         $items = $this->map(function ($value) {
             return ($value);
         });
