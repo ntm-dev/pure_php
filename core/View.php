@@ -1,12 +1,12 @@
 <?php
 
-namespace Core\Views;
+namespace Core;
 
 use Core\Views\ViewInterface;
 use Core\Views\Twig\Base as TwigView;
 use Core\Views\Smarty\Base as SmartyView;
 
-class Base implements ViewInterface
+class View implements ViewInterface
 {
     /** @var string template file path */
     protected $template;
@@ -37,6 +37,13 @@ class Base implements ViewInterface
         $this->setDelimiter(config('VIEW_LEFT_DELIMITER', '{{'), config('VIEW_RIGHT_DELIMITER', '}}'));
     }
 
+    public function setTempate($path = '')
+    {
+        $this->view->setTempate($path);
+
+        return $this;
+    }
+
     public function setDelimiter(string $leftDelimiter = '{{', string $rightDelimiter = '}}')
     {
         $this->view->setDelimiter($leftDelimiter, $rightDelimiter);
@@ -47,13 +54,32 @@ class Base implements ViewInterface
         $this->view->assign($data);
     }
 
-    public function display()
+    public function attachViewData($path, array $data): static
     {
+        if ($path) {
+            $this->setTempate($path);
+        }
+
+        if (!empty($data)) {
+            $this->assign($data);
+        }
+
+        return $this;
+    }
+
+    public function display($path = '', array $data = [])
+    {
+        if ($path) {
+            $this->view->setTempate($path);
+        }
+
         $this->view->display();
     }
 
-    public function render()
+    public function render($path = '', array $data = [])
     {
+        $this->attachViewData($path, $data);
+
         return $this->view->render();
     }
 }

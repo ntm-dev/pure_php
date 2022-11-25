@@ -12,4 +12,9 @@ class User extends BaseModel
      * @var string
      */
     public $table = 'users';
+
+    public function creating($model)
+    {
+        // $this->abcs = 'ds';
+    }
 }

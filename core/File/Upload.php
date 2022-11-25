@@ -1,9 +1,9 @@
 <?php
 
-namespace Support\File;
+namespace Core\File;
 
-use Support\File\MimeTypes;
-use Support\File\UploadedFile;
+use Core\File\MimeTypes;
+use Core\File\UploadedFile;
 
 /**
  * A file uploaded through a form.

@@ -1,5 +1,12 @@
 <?php
 
+use Core\Application;
+use Core\Support\Helper\Str;
+use Core\Support\Helper\Arr;
+use Core\Support\Facades\View;
+use Core\Support\Helper\Collection;
+use Core\Http\Exception\NotFoundException;
+
 function dd()
 {
     array_map(function ($x) {
@@ -8,42 +15,54 @@ function dd()
     die;
 }
 
-function root_path()
+function app()
 {
-    return $_SERVER['PWD'];
+    return Application::getInstance();
 }
 
-function app_path()
+function base_path($path = '')
 {
-    return root_path() . "/app";
+    return Str::beforeLast(__DIR__, DIRECTORY_SEPARATOR) . ($path ? (DIRECTORY_SEPARATOR.$path) : '');
 }
 
-function public_path()
+function core_path($path = '')
 {
-    return root_path() . "/public";
+    return base_path("core" . ($path ? DIRECTORY_SEPARATOR.$path : ''));
+}
+
+function app_path($path = '')
+{
+    return base_path("app" . ($path ? DIRECTORY_SEPARATOR.$path : ''));
+}
+
+function public_path($path = '')
+{
+    return base_path("public" . ($path ? DIRECTORY_SEPARATOR.$path : ''));
+}
+
+function storage_path($path = '')
+{
+    return base_path("storage" . ($path ? DIRECTORY_SEPARATOR.$path : ''));
 }
 
 function collect($data)
 {
-    return new Core\Support\Helper\Collection($data);
+    return new Collection($data);
 }
 
 function view($template, $data = [])
 {
-    $view = new Core\Views\Base($template);
-    $view->assign($data);
-
-    return $view->render();
+    return View::render($template, $data);
 }
 
 function config($key, $default = null)
 {
-    return Core\Support\Helper\Arr::get(Core\Application::getInstance()->getConfig(), $key, $default);
+    return Arr::get(Application::getInstance()->getConfig(), $key, $default);
 }
 
 function abort(int $statusCode)
 {
-    throw new Core\Http\Request\Exception\NotFoundException('Not Found');
+    throw new NotFoundException('Not Found');
 }
 
 function app_name()

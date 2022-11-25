@@ -1,10 +1,10 @@
 <?php
 
-namespace Support\File;
+namespace Core\File;
 
-use Support\File\FileSystem;
-use Support\File\Exception\FileException;
-use Support\File\Exception\FileNotFoundException;
+use Core\File\FileSystem;
+use Core\File\Exception\FileException;
+use Core\File\Exception\FileNotFoundException;
 
 /**
  * A file uploaded through a form.

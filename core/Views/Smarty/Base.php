@@ -31,9 +31,16 @@ class Base extends ViewAbstract implements ViewInterface
         $this->bootstrap();
     }
 
+    public function setTempate(string $template = '')
+    {
+        $this->template = $template;
+
+        return $this;
+    }
+
     private function bootstrap()
     {
-        $this->view->setTemplateDir(root_path() . "/" .config('VIEW_TEMPLATE_DIR', static::TEMPLATE_DIR));
+        $this->view->setTemplateDir(base_path() . "/" .config('VIEW_TEMPLATE_DIR', static::TEMPLATE_DIR));
         $this->view->setCompileDir(config('VIEW_COMPILE_DIR', __DIR__ . "/compile"));
         // $this->view->setConfigDir(config('VIEW_CONFIG_DIR'));
         $this->view->setCacheDir(config('VIEW_CACHE_DIR', __DIR__ . "/cache"));
@@ -44,12 +51,12 @@ class Base extends ViewAbstract implements ViewInterface
         $this->view->assign($data);
     }
 
-    public function display()
+    public function display($path = '')
     {
         $this->view->display("$this->template." . static::TEMPLATE_EXTENSION);
     }
 
-    public function render()
+    public function render($path = '')
     {
         return $this->view->fetch("$this->template." . static::TEMPLATE_EXTENSION);
     }

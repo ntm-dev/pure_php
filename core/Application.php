@@ -3,18 +3,17 @@
 namespace Core;
 
 use Dotenv\Dotenv;
-use Core\Routing\Route;
-use Spatie\Ignition\Ignition;
 use Core\Http\Request;
+use Core\Routing\Route;
 use Core\Pattern\Singleton;
+use Core\Container\Container;
+use Spatie\Ignition\Ignition;
+use Core\Support\Facades\Storage;
 use Core\Support\Facades\Response;
 use Core\Http\Exception\HttpException;
-use Core\Support\Storage;
 
-class Application
+class Application extends Container
 {
-    use Singleton;
-
     /**
      * The registered type aliases.
      *
@@ -60,7 +59,6 @@ class Application
         $this->loadAlias();
         $this->loadRoutes();
         $this->request = new Request;
-        self::$instance = $this;
     }
 
     /**
@@ -70,14 +68,14 @@ class Application
      */
     private function loadConfig()
     {
-        $dotenv = Dotenv::createUnsafeImmutable(root_path());
+        $dotenv = Dotenv::createUnsafeImmutable(base_path());
         $dotenv->load();
 
         $configs = [];
-        $configFiles = Storage::files(root_path() . "/config", "*.php");
+        $configFiles = Storage::files(base_path() . "/config", "*.php");
         foreach ($configFiles as $file) {
             $fileName = substr($file, strrpos($file, "/") + 1);
-            $configs += [substr($fileName, 0, strrpos($fileName, ".")) => require $file];
+            $configs += [substr($fileName, 0, strrpos($fileName, ".")) => @include $file];
         }
         $this->configs = array_merge($configs, $_ENV);
     }
@@ -113,7 +111,7 @@ class Application
      */
     private function loadRoutes()
     {
-        require root_path() . "/routes/web.php";
+        require base_path() . "/routes/web.php";
 
         $this->routes = Route::getRouteList();
     }
@@ -128,7 +126,7 @@ class Application
         $this->registerShutdownFunction();
 
         try {
-            $response = Route::dispatch();
+            $route = Route::dispatch();
         } catch (\Throwable $th) {
             if (! $th instanceof HttpException) {
                 throw $th;
@@ -136,7 +134,30 @@ class Application
             $response = $th->response();
         }
 
+        if ($route instanceof \Closure) {
+            $response = $route();
+        } else {
+            $controller = $this->getController($route['controller']);
+            $response = $controller->{$route['action']} (
+                ...$this->resolveClassMethodDependencies($controller, $route['action'])
+            );
+        }
+
         Response::setContent($response)->send();
+    }
+
+    /**
+     * Get the controller instance for the route.
+     *
+     * @return mixed
+     */
+    public function getController($name)
+    {
+        try {
+            return $this->make($name);
+        } catch (\Exception $e) {
+            throw $e;
+        }
     }
 
     /**
@@ -146,13 +167,26 @@ class Application
      */
     private function registerShutdownFunction()
     {
-        Ignition::make()->register();
-        register_shutdown_function(function() {
-            $lastError = error_get_last();
-            if (!is_null($lastError) && in_array($lastError['type'], [E_COMPILE_ERROR, E_CORE_ERROR, E_ERROR, E_PARSE])) {
-                $exception = new \Core\Error\ErrorHandle($lastError['message'], 0, $lastError, 0);
-                return call_user_func([Ignition::make(), 'handleException'], $exception);
-            }
+        Ignition::make()->register()->configureFlare(function($flare) {
+            $flare->registerMiddleware([
+                new class implements \Spatie\FlareClient\FlareMiddleware\FlareMiddleware
+                {
+                    public function handle(\Spatie\FlareClient\Report $report, \Closure $next)
+                    {
+                        $report->frameworkVersion(env("APP_VERSION", '1.0.0'));
+                        $report->group('env', [
+                            'app_version' => env("APP_VERSION", '1.0.0'),
+                            'app_locale' => env("APP_LOCALE", 'en'),
+                            'app_config_cached' => false,
+                            'app_debug' => config('app.debug', true),
+                            'app_env' => config('app.env', 'local'),
+                            'php_version' => phpversion(),
+                        ]);
+
+                        return $next($report);
+                    }
+                }
+            ]);
         });
     }
 }

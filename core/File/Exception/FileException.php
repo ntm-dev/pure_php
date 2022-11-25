@@ -1,6 +1,6 @@
 <?php
 
-namespace Support\File\Exception;
+namespace Core\File\Exception;
 
 /**
  * Thrown when an error occurred in the component File.

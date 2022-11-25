@@ -88,4 +88,14 @@ class ArrayIterator implements \ArrayAccess, \IteratorAggregate
 
         return $this->offsetGet($name);
     }
+
+    /**
+     * Get attributes as a copy array.
+     *
+     * @return  array
+     */
+    public function getArrayCopy()
+    {
+        return $this->attributes;
+    }
 }

@@ -36,9 +36,16 @@ class Base extends ViewAbstract implements ViewInterface
         $this->bootstrap();
     }
 
+    public function setTempate(string $template = '')
+    {
+        $this->template = $template;
+
+        return $this;
+    }
+
     private function bootstrap()
     {
-        $loader = new FilesystemLoader(root_path() . "/" . config('VIEW_TEMPLATE_DIR', static::TEMPLATE_DIR));
+        $loader = new FilesystemLoader(base_path() . "/" . config('VIEW_TEMPLATE_DIR', static::TEMPLATE_DIR));
         $this->view = new Environment($loader, [
             'auto_reload' => true,
             'cache' => config('VIEW_CACHE_DIR', __DIR__ . "/cache"),
@@ -51,12 +58,12 @@ class Base extends ViewAbstract implements ViewInterface
         $this->data = $data;
     }
 
-    public function display()
+    public function display($path = '')
     {
         echo $this->render();
     }
 
-    public function render()
+    public function render($path = '')
     {
         return $this->view->render("$this->template." . static::TEMPLATE_EXTENSION, $this->data);
     }

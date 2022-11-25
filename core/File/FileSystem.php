@@ -1,10 +1,10 @@
 <?php
 
-namespace Support\File;
+namespace Core\File;
 
-use Support\File\MimeTypes;
-use Support\File\Exception\FileException;
-use Support\File\Exception\FileNotFoundException;
+use Core\File\MimeTypes;
+use Core\File\Exception\FileException;
+use Core\File\Exception\FileNotFoundException;
 
 /**
  * A file in the file system.

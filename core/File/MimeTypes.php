@@ -1,6 +1,6 @@
 <?php
 
-namespace Support\File;
+namespace Core\File;
 
 /**
  * Manages MIME types and file extensions.

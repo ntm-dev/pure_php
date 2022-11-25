@@ -79,6 +79,16 @@ class ArrayIterator implements \ArrayAccess, \IteratorAggregate
         return isset($this->items[$key]);
     }
 
+    /**
+     * Get attributes as a copy array.
+     *
+     * @return  array
+     */
+    public function getArrayCopy()
+    {
+        return $this->items;
+    }
+
     public function __get($name)
     {
         if (!isset($this->items[$name])) {

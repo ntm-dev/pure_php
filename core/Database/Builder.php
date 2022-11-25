@@ -29,9 +29,7 @@ class Builder
      *
      * @var array
      */
-    public $bindings = [
-        'where' => [],
-    ];
+    public $bindings = [];
 
     /**
      * The orderings for the query.
@@ -74,9 +72,9 @@ class Builder
         return static::$connection ?: $this->connect();
     }
 
-    public function select(array $cols = ['*'])
+    public function select($columns = ['*'])
     {
-        $this->selects = $cols;
+        $this->selects = is_array($columns) ? $columns : func_get_args();
 
         return $this;
     }
@@ -107,16 +105,26 @@ class Builder
      *
      * @throws \InvalidArgumentException
      */
-    public function addBinding($value, $type = 'where')
+    public function addBinding($value)
     {
-        if (! array_key_exists($type, $this->bindings)) {
-            throw new \InvalidArgumentException("Invalid binding type: {$type}.");
-        }
+        $this->bindings[] = $value;
 
-        if (is_array($value)) {
-            $this->bindings[$type] = array_values(array_merge($this->bindings[$type], $value));
-        } else {
-            $this->bindings[$type][] = $value;
+        return $this;
+    }
+
+    /**
+     * Multiple binding.
+     *
+     * @param  array $values
+     * @param  string  $type
+     * @return $this
+     *
+     * @throws \InvalidArgumentException
+     */
+    public function addBindings(array $values)
+    {
+        foreach ($values as $value) {
+            $this->addBinding($value);
         }
 
         return $this;
@@ -143,11 +151,11 @@ class Builder
         return $this->fetchAll();
     }
 
-    private function query(\PDO $con = null)
+    private function query($sql, \PDO $con = null)
     {
-        $statement = ($con ?: $this->getConnection())->prepare($this->buildSelectQuery());
+        $statement = ($con ?: $this->getConnection())->prepare($sql);
 
-        $this->bindValues($statement, $this->bindings['where']);
+        $this->bindValues($statement, $this->bindings);
 
         $statement->execute();
 
@@ -175,7 +183,7 @@ class Builder
     private function fetchAll(\PDOStatement $stmt = null)
     {
         try {
-            $result = $this->query($stmt)->fetchAll(\PDO::FETCH_ASSOC);
+            $result = $this->query($this->buildSelectQuery(), $stmt)->fetchAll(\PDO::FETCH_ASSOC);
             if (empty($result)) {
                 return null;
             }
@@ -196,7 +204,7 @@ class Builder
     private function fetch(\PDOStatement $stmt = null)
     {
         try {
-            $result = $this->query($stmt)->fetch(\PDO::FETCH_ASSOC);
+            $result = $this->query($this->buildSelectQuery(), $stmt)->fetch(\PDO::FETCH_ASSOC);
 
             if (empty($result)) {
                 return null;
@@ -258,6 +266,20 @@ class Builder
         $this->table = $table;
     }
 
+    public function take($num)
+    {
+        $this->limit = $num;
+
+        return $this;
+    }
+
+    public function skip($num)
+    {
+        $this->offset = $num;
+
+        return $this;
+    }
+
     public function getTable()
     {
         return $this->table;
@@ -268,5 +290,119 @@ class Builder
         $this->setTable($name);
 
         return $this;
+    }
+
+    /**
+     * Count record
+     *
+     * @return int|false
+     */
+    public function count()
+    {
+        $this->select("SQL_CALC_FOUND_ROWS *");
+        if (false !== $stm = $this->query($this->buildSelectQuery())) {
+            return $stm->rowCount();
+        }
+
+        return false;
+    }
+
+    /**
+     * Check exist
+     *
+     * @return  bool
+     */
+    public function exist()
+    {
+        return !!$this->count();
+    }
+
+    public function create(array $values)
+    {
+        $this->model->setAttributes($values);
+        $this->fireModelEvent('creating');
+
+        $result = $this->model->save();
+        if ($result) {
+            $this->fireModelEvent('created');
+        }
+
+        return $result;
+    }
+
+    /**
+     * Insert new records into the database.
+     *
+     * @param  array  $values
+     * @return bool
+     */
+    public function insert(array $values)
+    {
+        if (empty($values)) {
+            return true;
+        }
+
+        if (! is_array(reset($values))) {
+            $values = [$values];
+        }
+
+        try {
+            $this->query($this->compileInsert($values));
+            return true;
+        } catch (\Throwable $th) {
+            throw $th;
+            return false;
+        }
+    }
+
+    public function insertGetId(array $values)
+    {
+        if ($this->insert($values)) {
+            return $this->getConnection()->lastInsertId();
+        }
+
+        return false;
+    }
+
+    /**
+     * Compile an insert statement into SQL.
+     *
+     * @param  array  $values
+     * @return string
+     */
+    public function compileInsert(array $values)
+    {
+        $table = $this->getTable();
+
+        if (! is_array(reset($values))) {
+            $values = [$values];
+        }
+
+        $columns = implode(", ", array_keys(reset($values)));
+
+        $parameters = implode(", ", array_map(function($vals) {
+            $this->addBindings($vals, "insert");
+            return "(" . implode(", ", array_map(function() { return "?"; }, $vals)) . ")";
+        }, $values));
+
+        return "insert into $table ($columns) values $parameters";
+    }
+
+    public function update(array $attributes = [])
+    {
+        if (!$this->exist()) {
+            return false;
+        }
+
+        // return $this->fill()
+    }
+
+    public function fireModelEvent(string $event)
+    {
+        if (!method_exists($this->model, $event)) {
+            return;
+        }
+
+        return $this->model->{$event}($this->model);
     }
 }

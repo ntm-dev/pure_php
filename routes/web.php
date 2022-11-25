@@ -2,7 +2,8 @@
 
 use Core\Routing\Route;
 
-Route::get('/', function() {
-    echo "first route";
-});
-Route::get('/first-model', "HomeController@index");
+// Route::get('/', function() {
+//     echo "first route";
+// });
+Route::get('/', "HomeController@index");
+Route::get('/first/model', "HomeController@index");

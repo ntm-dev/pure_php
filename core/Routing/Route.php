@@ -4,9 +4,10 @@ namespace Core\Routing;
 
 use Throwable;
 use Exception;
-use BadMethodCallException;
 use ReflectionMethod;
-use Core\Http\Request;
+use BadMethodCallException;
+use Core\Container\Container;
+use Core\Support\Facades\Request;
 use Core\Http\Exception\NotFoundException as HttpNotFoundException;
 
 class Route
@@ -74,7 +75,7 @@ class Route
 
     private static function getRequestMethodRouteList($requestMethod = '')
     {
-        return self::$routes[$requestMethod ?: $_SERVER['REQUEST_METHOD']];
+        return self::$routes[$requestMethod ?: Request::method()];
     }
 
     public static function getRouteList()
@@ -94,41 +95,26 @@ class Route
 
     private static function getRequestMethod()
     {
-        return $_SERVER['REQUEST_METHOD'];
+        return Request::method();
     }
 
     private static function resolveRoute()
     {
-        $callback = self::getCurrentRoute();
-        if ($callback instanceof \Closure) {
-            return $callback();
-        }
-        if (is_string($callback)) {
-            return self::handleController($callback);
-        }
-    }
+        $route = self::getCurrentRoute();
 
-    private static function handleController($callback)
-    {
-        list($controllerName, $method) = explode("@", $callback);
-
-        $controllerPath = app_path() . "/Controllers/$controllerName.php";
-        $controllerName = "App\\Controllers\\$controllerName";
-
-        if (include "$controllerPath") {
-            $controller = new $controllerName();
-            try {
-                $reflectionMethod = new ReflectionMethod($controller, $method);
-                if (! $reflectionMethod->isPublic()) {
-                    throw new Exception;
-                }
-            } catch (Throwable $th) {
-                throw new BadMethodCallException("Method $controllerName::$method does exist");
-            }
-
-            return call_user_func_array([$controller, $method], []);
+        if ($route instanceof \Closure) {
+            return $route;
         }
 
-        throw new BadMethodCallException("$controllerName not found");
+        if (is_string($route)) {
+            list($controllerName, $action) = explode("@", $route);
+
+            return [
+                'controller' => "App\\Controllers\\$controllerName",
+                'action'     => $action,
+            ];
+        }
+
+        throw new \LogicException(sprintf("Can not find route [%s] or route is not vaild", Request::path()));
     }
 }
