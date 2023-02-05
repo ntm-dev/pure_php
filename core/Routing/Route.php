@@ -2,17 +2,16 @@
 
 namespace Core\Routing;
 
-use Throwable;
-use Exception;
-use ReflectionMethod;
-use BadMethodCallException;
-use Core\Container\Container;
+use Closure;
 use Core\Support\Facades\Request;
 use Core\Http\Exception\NotFoundException as HttpNotFoundException;
+use UnexpectedValueException;
 
 class Route
 {
     private static $routes = [];
+
+    private static $groupStack = [];
 
     /**
      * Register a new GET route with the router.
@@ -39,6 +38,43 @@ class Route
     }
 
     /**
+     * Create a route group with shared attributes.
+     *
+     * @param  string|array  $attributes
+     * @param  \Closure      $routes
+     * @return void
+     */
+    public static function group($attributes, Closure $routes)
+    {
+        if (is_array($attributes)) {
+            if (!isset($attributes['prefix'])) {
+                throw new UnexpectedValueException('Argument #1 ($attributes) must content prefix');
+            }
+            $prefix = $attributes['prefix'];
+        } elseif (is_string($attributes)) {
+            $prefix = $attributes;
+        } else {
+            throw new UnexpectedValueException('Argument #1 ($attributes) must be of type array or string, %s given', gettype($attributes));
+        }
+
+        $groupStack = static::$groupStack;
+        static::$groupStack[] = $prefix;
+        $routes();
+        static::$groupStack = $groupStack;
+    }
+
+    /**
+     * Concat prefix with uri.
+     *
+     * @param  string  $uri
+     * @return string
+     */
+    private static function prefix($uri)
+    {
+        return trim(trim(end(static::$groupStack), '/').'/'.trim($uri, '/'), '/') ?: '/';
+    }
+
+    /**
      * Add a route to the underlying route.
      *
      * @param  array|string $methods
@@ -48,6 +84,7 @@ class Route
      */
     public static function addRoute($methods, $uri, $action)
     {
+        $uri = static::prefix($uri);
         if (is_array($methods)) {
             foreach ($methods as $method) {
                 self::$routes[$method][$uri] = $action;
@@ -61,7 +98,7 @@ class Route
 
     public static function dispatch()
     {
-        if (!array_key_exists(Request::getInstance()->getPathInfo(), self::getRequestMethodRouteList())) {
+        if (!array_key_exists(ltrim(Request::getInstance()->getPathInfo(), "/"), self::getRequestMethodRouteList())) {
             $publicLocation = public_path() . Request::getInstance()->getPathInfo();
             if (file_exists($publicLocation)) {
                 return readfile($publicLocation);
@@ -85,7 +122,7 @@ class Route
 
     private static function getRoute($uri = '')
     {
-        return self::$routes[self::getRequestMethod()][$uri ?: Request::getInstance()->getPathInfo()];
+        return self::$routes[self::getRequestMethod()][$uri ?: ltrim(Request::getInstance()->getPathInfo(), "/")];
     }
 
     private static function getCurrentRoute()
