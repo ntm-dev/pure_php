@@ -3,6 +3,7 @@
 namespace Core\Http;
 
 use Core\Config;
+use Core\Pattern\Singleton;
 use Core\Support\Helper\Arr;
 use Core\Support\Helper\Str;
 use Core\Support\Facades\Date;
@@ -15,6 +16,8 @@ use Core\Support\Facades\Response;
  */
 class Session
 {
+    use Singleton;
+
     /**
      * The session ID.
      *
@@ -50,7 +53,6 @@ class Session
         $this->setId($id ?: $this->getIdFromCookie());
         $this->start();
         $this->ageFlashData();
-        $this->addCookieToResponse();
     }
 
     public function getConfig($key = '')

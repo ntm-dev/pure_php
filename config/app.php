@@ -2,6 +2,6 @@
 
 return [
     "aliases" => [
-        "Route" => Core\Routing\Route::class
+        // "Route" => Core\Routing\Route::class
     ]
 ];

@@ -3,12 +3,10 @@
 namespace Core;
 
 use Dotenv\Dotenv;
-use Core\Http\Request;
 use Core\Routing\Route;
-use Core\Pattern\Singleton;
+use Core\Support\Helper\Str;
 use Core\Container\Container;
 use Spatie\Ignition\Ignition;
-use Core\Support\Facades\Storage;
 use Core\Support\Facades\Response;
 use Core\Http\Exception\HttpException;
 
@@ -54,11 +52,9 @@ class Application extends Container
      */
     private function bootstrap()
     {
-        ini_set('display_errors', 0);
         $this->loadConfig();
         $this->loadAlias();
         $this->loadRoutes();
-        $this->request = new Request;
     }
 
     /**
@@ -68,15 +64,15 @@ class Application extends Container
      */
     private function loadConfig()
     {
-        $dotenv = Dotenv::createUnsafeImmutable(base_path());
-        $dotenv->load();
+        Dotenv::createUnsafeImmutable(base_path())->load();
 
         $configs = [];
-        $configFiles = Storage::files(base_path() . "/config", "*.php");
-        foreach ($configFiles as $file) {
-            $fileName = substr($file, strrpos($file, "/") + 1);
-            $configs += [substr($fileName, 0, strrpos($fileName, ".")) => @include $file];
+        $files = @array_diff(@scandir(base_path('config')), array('.', '..')) ?: [];
+
+        foreach ($files as $file) {
+            $configs += [Str::beforeLast($file, ".") => @include base_path("config/$file")];
         }
+
         $this->configs = array_merge($configs, $_ENV);
     }
 

@@ -30,7 +30,7 @@ return [
     |
     */
 
-    'cookie' => getenv('SESSION_COOKIE') ?: Str::slug(getenv('APP_NAME') ?: 'repitte', '_').'_session',
+    'cookie' => getenv('SESSION_COOKIE') ?: Str::slug(getenv('APP_NAME') ?: 'pure_php', '_').'_session',
 
     /*
     |--------------------------------------------------------------------------
