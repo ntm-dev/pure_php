@@ -15,8 +15,6 @@ use Core\Support\Trait\CallStaticAble;
  */
 class Validator implements ValidatorInterface
 {
-    use CallStaticAble;
-
     /** Alias method prefix */
     protected const ALIAS_METHOD_PREFIX = ['get', 'exec'];
 

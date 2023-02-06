@@ -1,6 +1,6 @@
 <?php
 
-namespace Core\Support\Helper\Mailer;
+namespace Core\Support\Mailer;
 
 use Core\View;
 use PHPMailer\PHPMailer\PHPMailer;

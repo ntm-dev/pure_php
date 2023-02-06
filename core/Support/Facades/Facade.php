@@ -25,13 +25,37 @@ abstract class Facade
         throw new RuntimeException('Facade does not implement getFacadeAccessor method.');
     }
 
-    protected static function resolvedInstance(string $accessor)
+    /**
+     * Resolved instance.
+     *
+     * @param  array  $accessor
+     * @param  bool   $refresh
+     * @return object
+     */
+    protected static function resolvedInstance(string $accessor, $refresh = false)
     {
-        if (isset(static::$resolvedInstance[$accessor])) {
+        if (!$refresh && isset(static::$resolvedInstance[$accessor])) {
             return static::$resolvedInstance[$accessor];
         }
 
-        return static::$resolvedInstance[$accessor] = new $accessor;
+        return static::$resolvedInstance[$accessor] = app()->make($accessor);
+    }
+
+    /**
+     * Get accessor instance.
+     *
+     * @param  bool   $refresh
+     * @return object
+     */
+    public static function instance($refresh = false)
+    {
+        $instance = static::resolvedInstance(static::getFacadeAccessor(), $refresh);
+
+        if (! $instance) {
+            throw new RuntimeException('A facade root has not been set.');
+        }
+
+        return $instance;
     }
 
     /**
@@ -45,12 +69,6 @@ abstract class Facade
      */
     public static function __callStatic($method, $arguments)
     {
-        $instance = static::resolvedInstance(static::getFacadeAccessor());
-
-        if (! $instance) {
-            throw new RuntimeException('A facade root has not been set.');
-        }
-
-        return $instance->$method(...$arguments);
+        return self::instance()->$method(...$arguments);
     }
 }

@@ -3,7 +3,9 @@
 namespace Core;
 
 use Dotenv\Dotenv;
+use RuntimeException;
 use Core\Routing\Route;
+use Core\Contract\Provider;
 use Core\Support\Helper\Str;
 use Core\Container\Container;
 use Spatie\Ignition\Ignition;
@@ -13,7 +15,7 @@ use Core\Http\Exception\HttpException;
 class Application extends Container
 {
     /**
-     * The registered type aliases.
+     * The registered config.
      *
      * @var array
      */
@@ -42,7 +44,9 @@ class Application extends Container
 
     public function __construct()
     {
-        $this->bootstrap();
+        if (!self::$instance) {
+            $this->bootstrap();
+        }
     }
 
     /**
@@ -54,6 +58,7 @@ class Application extends Container
     {
         $this->loadConfig();
         $this->loadAlias();
+        $this->loadProvider();
         $this->loadRoutes();
     }
 
@@ -93,10 +98,28 @@ class Application extends Container
      */
     private function loadAlias()
     {
-        $this->configs ?: $this->loadConfig();
         $this->aliases = $this->configs['app']['aliases'];
         foreach ($this->aliases as $alias => $class) {
             class_alias($class, $alias);
+        }
+    }
+
+    private function loadProvider()
+    {
+        $loadedProviders = [];
+
+        foreach ($this->configs['app']['providers'] as $provider) {
+            $provider = $this->make($provider);
+            if (!$provider instanceof Provider) {
+                throw new RuntimeException(sprintf("%s must be instance of %s", get_class($provider), Provider::class));
+            }
+            $loadedProviders[] = $provider;
+            $provider->app = $this;
+            $provider->register();
+        }
+
+        foreach ($loadedProviders as $provider) {
+            $provider->boot();
         }
     }
 
