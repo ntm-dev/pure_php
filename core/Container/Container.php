@@ -14,32 +14,18 @@ class Container
     use Singleton;
 
     /**
-     * An array of the types that have been resolved.
+     * The container's shared instances.
      *
-     * @var bool[]
+     * @var array[]
      */
-    protected $resolved = [];
+    protected $instances = [];
 
     /**
      * The container's bindings.
      *
-     * @var array[]
+     * @var array
      */
     protected $bindings = [];
-
-    /**
-     * The container's method bindings.
-     *
-     * @var \Closure[]
-     */
-    protected $methodBindings = [];
-
-    /**
-     * The container's shared instances.
-     *
-     * @var object[]
-     */
-    protected $instances = [];
 
     /**
      * The stack of concretions currently being built.
@@ -49,29 +35,83 @@ class Container
     protected $buildStack = [];
 
     /**
-     * Set the shared instance of the container.
-     *
-     * @param  \Core\Container\Container|null  $container
-     * @return \Core\Container\Container|static
-     */
-    public static function setInstance(Container $container = null)
-    {
-        return static::$instance = $container;
-    }
-
-    /**
      * Regist a class or interface to Container
      *
-     * @param  string     $abstract
-     * @param  \stdClass  $concrete
-     * @return void
+     * @param  string|object $abstract
+     * @param  object|null   $concrete
+     * @param  bool          $shared
      */
-    public function bind($abstract, $concrete = null): void
+    public function bind($abstract, $concrete = null, $shared = false)
     {
+        $abstract = $this->normalize($abstract);
+
+        $concrete = $this->normalize($concrete);
+
         if (is_null($concrete)) {
             $concrete = $abstract;
         }
-        $this->instances[$abstract] = $concrete;
+
+        if (is_object($concrete)) {
+            $this->instances[$abstract] = $concrete;
+        } elseif (! $concrete instanceof Closure) {
+            if (! is_string($concrete)) {
+                throw new \UnexpectedValueException(self::class.'::bind(): Argument #2 ($concrete) must be of type Closure|string|null');
+            }
+        }
+
+        $this->bindings[$abstract] = compact('concrete', 'shared');
+    }
+
+    /**
+     * Determine if the given abstract type has been bound.
+     *
+     * @param  string  $abstract  bnm,sdferty  df`      2
+     * @return bool
+     */
+    public function bound($abstract)
+    {
+        $abstract = $this->normalize($abstract);
+
+        return isset($this->bindings[$abstract]) || isset($this->instances[$abstract]);
+    }
+
+    /**
+     * Register a shared binding in the container and make it.
+     *
+     * @param  string|array          $abstract
+     * @param  \Closure|string|null  $concrete
+     * @return void
+     */
+    public function makeSingleton($abstract, $concrete = null)
+    {
+        $this->bind($abstract, $concrete, true);
+
+        return $this->make($abstract);
+    }
+
+    /**
+     * Register a shared binding in the container.
+     *
+     * @param  string|array          $abstract
+     * @param  \Closure|string|null  $concrete
+     * @return void
+     */
+    public function singleton($abstract, $concrete = null)
+    {
+        $this->bind($abstract, $concrete, true);
+    }
+
+    /**
+     * Determine if a given type is shared.
+     *
+     * @param  string  $abstract
+     * @return bool
+     */
+    public function isShared($abstract)
+    {
+        return isset($this->instances[$abstract]) ||
+              (isset($this->bindings[$abstract]['shared']) &&
+               $this->bindings[$abstract]['shared'] === true);
     }
 
     /**
@@ -83,16 +123,37 @@ class Container
      */
     public function make($abstract)
     {
-        // If an instance of the type is currently being managed as a singleton we'll
-        // just return an existing instance instead of instantiating new instances
-        // so the developer can keep using the same objects instance every time.
-        if (isset($this->instances[$abstract])) {
-            return $this->instances[$abstract];
+        if (! $this->bound($abstract)) {
+            $this->bind($abstract);
         }
 
-        $this->bind($abstract, $instance = $this->resolveClass($abstract));
+        if ($this->isShared($abstract)) {
+            return $this->isResolved($abstract)
+                ? $this->getResolvedInstance($abstract)
+                : $this->instances[$abstract] = $this->build($abstract);
+        }
 
-        return $instance;
+        return  $this->build($abstract);
+    }
+
+    public function isResolved($abstract)
+    {
+        return isset($this->instances[$abstract]);
+    }
+
+    /**
+     * Get resolved instance
+     *
+     * @param  string  $abstract
+     * @return object|array|null
+     */
+    public function getResolvedInstance($abstract = '')
+    {
+        if ($abstract) {
+            return isset($this->instances[$abstract]) ? $this->instances[$abstract] : null;
+        }
+
+        return $this->instances;
     }
 
     /**
@@ -103,7 +164,7 @@ class Container
      *
      * @throws \Exception
      */
-    protected function resolveClass($concrete)
+    public function build($concrete)
     {
         try {
             $reflector = new ReflectionClass($concrete);
@@ -209,6 +270,17 @@ class Container
         }
 
         throw new Exception($message);
+    }
+
+    /**
+     * Normalize the given class name by removing leading slashes.
+     *
+     * @param  mixed  $service
+     * @return mixed
+     */
+    protected function normalize($service)
+    {
+        return is_string($service) ? ltrim($service, '\\') : $service;
     }
 
 }
