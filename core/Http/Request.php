@@ -5,13 +5,15 @@ namespace Core\Http;
 use ArrayObject;
 use Core\Http\ServerBag;
 use Core\Pattern\Singleton;
+use Core\Support\Helper\Str;
+use Core\Support\Helper\Arr;
 
 class Request
 {
     use Singleton;
 
     /**
-     * Request body parameters ($_POST).
+     * Request body parameters ($_REQUEST).
      *
      * @var ArrayObject
      */
@@ -41,14 +43,17 @@ class Request
      */
     public $headers = [];
 
+    /** 
+     * Request session.
+     *
+     * @var  \Core\Http\Section
+     */
+    public $session;
+
     public function __construct()
     {
-        $this->initialize();
-    }
-
-    public function initialize()
-    {
         $this->server = new ServerBag;
+        $this->session = Session::getInstance();
         $this->headers = $this->server->getHeaders();
         $this->parameters = new ArrayObject($_REQUEST, ArrayObject::ARRAY_AS_PROPS);
     }
@@ -122,7 +127,7 @@ class Request
     {
         $query = $this->getQueryString();
 
-        return $query ? $this->url() . "/?" . $query : $this->url();
+        return $query ? trim($this->url(), "/") . "/?" . $query : $this->url();
     }
 
     /**
@@ -184,6 +189,9 @@ class Request
 
     public function secure(): bool
     {
+        if (isset($this->headers['X_FORWARDED_PROTO'])) {
+           return $this->headers['X_FORWARDED_PROTO'] == "https";
+        }
         $https = $this->server->get('HTTPS');
 
         return !empty($https) && 'off' !== strtolower($https);
@@ -196,6 +204,14 @@ class Request
      */
     public function ip()
     {
+        if ($this->server->has('HTTP_CLIENT_IP')) { // ip is from the share internet
+            return $this->server->get('HTTP_CLIENT_IP');
+        } elseif ($this->server->has('HTTP_CF_CONNECTING_IP')) { // ip behind CloudFlare network
+            return $this->server->get('HTTP_CF_CONNECTING_IP');
+        } elseif ($this->server->has('HTTP_X_FORWARDED_FOR')) { // ip is from the proxy
+            return $this->server->get('HTTP_X_FORWARDED_FOR');
+        }
+
         return $this->server->get('REMOTE_ADDR');
     }
 
@@ -206,7 +222,7 @@ class Request
      */
     public function userAgent()
     {
-        return $this->headers['User-Agent'];
+        return $this->header('User-Agent');
     }
 
     /**
@@ -226,11 +242,90 @@ class Request
     }
 
     /**
+     * Get the JSON payload for the request.
+     *
+     * @param  string|null  $key
+     * @param  mixed  $default
+     * @return mixed
+     */
+    public function json($key = null, $default = null)
+    {
+        if (! isset($this->json)) {
+            $json = (array) json_decode(file_get_contents('php://input'), true);
+        }
+
+        if ($key) {
+            return Arr::get($json, $key, $default);
+        }
+
+        return $json;
+    }
+
+
+    /**
+     * Get input from request without some arguments
+     *
+     * @param  array  $arguments
+     * @return ArrayObject
+     */
+    public function except($arguments)
+    {
+        $parameters = $this->parameters->getArrayCopy();
+        foreach ($arguments as $argument) {
+            if (isset($parameters[$argument])) {
+                unset($parameters[$argument]);
+            }
+        }
+
+        return $parameters;
+    }
+
+    /**
+     * Gets input from request consisting of specified arguments
+     *
+     * @param  array  $arguments
+     * @return ArrayObject
+     */
+    public function only($arguments)
+    {
+        $parameters = [];
+        foreach ($arguments as $argument) {
+            if (isset($this->parameters[$argument])) {
+                $parameters[$argument] = $this->parameters[$argument];
+            }
+        }
+
+        return $parameters;
+    }
+
+    /**
+     * Get an input from request.
+     *
+     * @param  string  $key
+     * @param  mixed   $default
+     * @return mixed
+     */
+    public function input($key, $default = null)
+    {
+        return $this->get($key, $default);
+    }
+
+    /**
+     * Get all input from request.
+     *
+     * @return mixed
+     */
+    public function all()
+    {
+        return $this->parameters->getArrayCopy();
+    }
+
+    /**
      * Returns the HTTP host being requested.
      *
      * The port name will be appended to the host if it's non-standard.
      */
-    public function getHttpHost(): string
+    public function getHttpHost()
     {
         $scheme = $this->getScheme();
         $port = $this->getPort();
@@ -239,10 +334,10 @@ class Request
             return $this->getHost();
         }
 
-        return $this->getHost() . ':' . $port;
+        return $this->getHost().':'.$port;
     }
 
-    public function getHost(): string
+    public function getHost()
     {
         if (!$host = $this->headers['HOST']) {
             if (!$host = $this->server->get('SERVER_NAME')) {
@@ -257,10 +352,15 @@ class Request
         return $host;
     }
 
-    public function getPort(): string
+    public function getPort()
     {
         if ($this->headers['HOST']) {
-            return $this->server->get('SERVER_PORT');
+            if (isset($this->headers['X_FORWARDED_PORT'])) {
+                return $this->headers['X_FORWARDED_PORT'];
+            }
+            return Str::startsWith($this->headers['HOST'], 'localhost')
+                ? Str::after($this->headers['HOST'], ":")
+                : $this->server->get('SERVER_PORT');
         }
 
         return 'https' === $this->getScheme() ? 443 : 80;
@@ -291,15 +391,15 @@ class Request
      * Returns true if the request is an XMLHttpRequest.
      *
      */
-    public function isXmlHttpRequest(): bool
+    public function isXmlHttpRequest()
     {
-        return 'XMLHttpRequest' == $this->headers['X-Requested-With'];
+        return 'XMLHttpRequest' == $this->header('X-Requested-With');
     }
 
     /**
      * Generates the normalized query string for the Request.
      */
-    public function getQueryString(): ?string
+    public function getQueryString()
     {
         return $this->server->get('QUERY_STRING');
     }
@@ -307,7 +407,7 @@ class Request
     /**
      * Prepares the path info.
      */
-    protected function preparePathInfo(): string
+    protected function preparePathInfo()
     {
         if (null === ($requestUri = $this->getRequestUri())) {
             return '/';
@@ -329,14 +429,50 @@ class Request
             $requestUri = $this->server->get('REQUEST_URI');
         } elseif ($this->server->has('ORIG_PATH_INFO')) {
             $requestUri = $this->server->get('ORIG_PATH_INFO');
-            if ('' != $this->server->get('QUERY_STRING')) {
-                $requestUri .= '?' . $this->server->get('QUERY_STRING');
-            }
             $this->server->remove('ORIG_PATH_INFO');
+        }
+        if ('' != $this->server->get('QUERY_STRING') && !preg_match("/\?/", $requestUri)) {
+            $requestUri .= '?'.$this->server->get('QUERY_STRING');
         }
 
         $this->server->set('REQUEST_URI', $requestUri);
 
         return $requestUri;
+    }
+
+    /**
+     * Get request header
+     *
+     * @param  string  $key
+     * @return mixed
+     */
+    public function header($key = '')
+    {
+        if ($key) {
+            return $this->server->getHeader(strtoupper(Str::snake(Str::headline($key))));
+        }
+
+        return $this->headers;
+    }
+
+    /**
+     * Check isset key in request
+     *
+     * @param string $key
+     * @return bool
+     */
+    public function has($key)
+    {
+        return !!$this->parameters->offsetExists($key);
+    }
+
+    /**
+     * Triggered when this class is treated like a string.
+     *
+     * @return string
+     */
+    public function __toString()
+    {
+        return serialize($this);
     }
 }
