@@ -3,7 +3,6 @@
 namespace Core;
 
 use Core\Support\Helper\Arr;
-use Core\Support\Helper\Str;
 use Core\Pattern\Singleton;
 use Core\Support\Facades\Storage as FacadesStorage;
 
@@ -24,29 +23,7 @@ class Config
 
     public function __construct()
     {
-        $this->loadAllConfig();
-    }
-
-    private function loadAllConfig()
-    {
-        if ($this->configs) {
-            return $this->configs;
-        }
-
-        $configs = [];
-        $files = @array_diff(@scandir(base_path('config')), array('.', '..')) ?: [];
-
-        foreach ($files as $file) {
-            if (Str::strtolower($file) !== $file) {
-                continue;
-            }
-            if (is_array($data = @include base_path("config/$file"))) {
-                $configs[Str::beforeLast($file, ".")] = $data;
-                unset($data);
-            }
-        }
-
-        return $this->configs = $configs;
+        $this->configs = app()->getConfig();
     }
 
     /**
@@ -68,6 +45,10 @@ class Config
      */
     private function getConfig($property, $default = null)
     {
+        if (!$this->configs) {
+            $this->configs = app()->getConfig();
+        }
+
         return Arr::get($this->configs, $property, $default);
     }
 
