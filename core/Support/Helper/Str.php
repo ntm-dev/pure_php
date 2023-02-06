@@ -117,9 +117,7 @@ class Str
      */
     public static function after($subject, $search)
     {
-        $offset = self::strpos($subject, $search) + self::strlen($search);
-
-        return self::substr($subject, $offset);
+        return $search === '' ? $subject : array_reverse(explode($search, $subject, 2))[0];
     }
 
     /**
@@ -145,7 +143,13 @@ class Str
      */
     public static function before($subject, $search)
     {
-        return self::substr($subject, 0, self::strpos($subject, $search));
+        if ($search === '') {
+            return $subject;
+        }
+
+        $result = self::strstr($subject, (string) $search, true);
+
+        return $result === false ? $subject : $result;
     }
 
     /**
@@ -351,6 +355,23 @@ class Str
     }
 
     /**
+     * Replace all occurrence of a given value in the string.
+     *
+     * @param  string  $search
+     * @param  string  $replace
+     * @param  string  $subject
+     * @return string
+     */
+    public static function replace($search, $replace, $subject)
+    {
+        while(self::contains($subject, $search)) {
+            $subject = self::replaceFirst($search, $replace, $subject);
+        }
+
+        return $subject;
+    }
+
+    /**
      * Replace the first occurrence of a given value in the string.
      *
      * @param  string  $search
@@ -364,10 +385,10 @@ class Str
             return $subject;
         }
 
-        $position = self::strpos($subject, $search);
+        $position = strpos($subject, $search);
 
         if ($position !== false) {
-            return substr_replace($subject, $replace, $position, self::strlen($search));
+            return substr_replace($subject, $replace, $position, strlen($search));
         }
 
         return $subject;
@@ -383,13 +404,35 @@ class Str
      */
     public static function replaceLast($search, $replace, $subject)
     {
-        $position = self::strrpos($subject, $search);
+        $position = strrpos($subject, $search);
 
         if ($position !== false) {
-            return substr_replace($subject, $replace, $position, self::strlen($search));
+            return substr_replace($subject, $replace, $position, strlen($search));
         }
 
         return $subject;
+    }
+
+    /**
+     * Generate a more truly "random" alpha-numeric string.
+     *
+     * @param  int  $length
+     * @return string
+     */
+    public static function random($length = 16)
+    {
+        $string = '';
+        $strongResult = true;
+
+        while (($len = strlen($string)) < $length) {
+            $size = $length - $len;
+
+            $bytes = openssl_random_pseudo_bytes($size, $strongResult);
+
+            $string .= substr(str_replace(['/', '+', '='], '', base64_encode($bytes)), 0, $size);
+        }
+
+        return $string;
     }
 
     /**
@@ -431,6 +474,22 @@ class Str
 
         // replace space, ~
         return preg_replace('/[^\x20-\x7E]/u', '', $value);
+    }
+
+    /**
+     * Check string is a valid Hankakus characters(Half-width kana).
+     *
+     * @param  mixed  $value
+     * @return bool
+     */
+    public static function isJson($value)
+    {
+        if (!empty($value)) {
+            @json_decode($value);
+            return (json_last_error() === JSON_ERROR_NONE);
+        }
+
+        return false;
     }
 
     /**
