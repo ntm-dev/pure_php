@@ -24,9 +24,11 @@ class Upload
     {
         $listFile = [];
         foreach($_FILES as $inputName => $value) {
-            foreach($value['name'] as $key => $fileName) {
-                if (!$value['error'][$key]) {
-                    $file = new UploadedFile($value['tmp_name'][$key], $fileName, $value['error'][$key]);
+            foreach((array)$value['name'] as $key => $fileName) {
+                $error = (array)$value['error'];
+                $tmpName = (array)$value['tmp_name'];
+                if (!$error[$key]) {
+                    $file = new UploadedFile($tmpName[$key], $fileName, $error[$key]);
                     if (in_array($file->guessExtension(), self::getAllowExtensions())) {
                         $listFile[$inputName][] = $file;
                     }
