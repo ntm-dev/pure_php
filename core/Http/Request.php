@@ -3,14 +3,20 @@
 namespace Core\Http;
 
 use ArrayObject;
+use ArrayAccess;
 use Core\Http\ServerBag;
 use Core\Pattern\Singleton;
 use Core\Support\Helper\Str;
 use Core\Support\Helper\Arr;
 
-class Request
+class Request implements ArrayAccess
 {
     use Singleton;
+
+    /**
+     * @var array
+     */
+    protected static $formats;
 
     /**
      * Request body parameters ($_REQUEST).
@@ -388,6 +394,267 @@ class Request
 
 
     /**
+     * Retrieve a file from the request.
+     *
+     * @param  string  $key
+     * @param  mixed  $default
+     * @return \Support\File|array|null
+     */
+    public function file($key = null, $default = null)
+    {
+        return Arr::get(Upload::get(), $key, $default);
+    }
+
+    /**
+     * Determine if the uploaded data contains a file.
+     *
+     * @param  string  $key
+     * @return bool
+     */
+    public function hasFile($key)
+    {
+        if (! is_array($files = $this->file($key))) {
+            $files = [$files];
+        }
+
+        foreach ($files as $file) {
+            if ($this->isValidFile($file)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Check that the given file is a valid file instance.
+     *
+     * @param  mixed  $file
+     * @return bool
+     */
+    protected function isValidFile($file)
+    {
+        return $file instanceof \SplFileInfo && $file->getPath() != '';
+    }
+
+    /**
+     * Determine if the request is sending JSON.
+     *
+     * @return bool
+     */
+    public function isJson()
+    {
+        return Str::contains($this->header('Content-Type') ?: '', ['/json', '+json']);
+    }
+
+    /**
+     * Determine if the request is simple form data.
+     *
+     * @return bool
+     */
+    public function isForm()
+    {
+        foreach (explode(";", $this->header('Content-Type')) as $contentType) {
+            if (in_array($contentType, $this->getMimeTypes('form'))) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Gets the mime types associated with the format.
+     *
+     * @param  string  $format
+     * @return array
+     */
+    public static function getMimeTypes($format)
+    {
+        if (null === static::$formats) {
+            static::initializeFormats();
+        }
+
+        return isset(static::$formats[$format]) ? static::$formats[$format] : [];
+    }
+
+    /**
+     * Initializes HTTP request formats.
+     */
+    protected static function initializeFormats()
+    {
+        static::$formats = [
+            'html' => ['text/html', 'application/xhtml+xml'],
+            'txt' => ['text/plain'],
+            'js' => ['application/javascript', 'application/x-javascript', 'text/javascript'],
+            'css' => ['text/css'],
+            'json' => ['application/json', 'application/x-json'],
+            'jsonld' => ['application/ld+json'],
+            'xml' => ['text/xml', 'application/xml', 'application/x-xml'],
+            'rdf' => ['application/rdf+xml'],
+            'atom' => ['application/atom+xml'],
+            'rss' => ['application/rss+xml'],
+            'form' => ['application/x-www-form-urlencoded', 'multipart/form-data'],
+        ];
+    }
+
+    /**
+     * Determine if the current request probably expects a JSON response.
+     *
+     * @return bool
+     */
+    public function expectsJson()
+    {
+        return ($this->ajax() && ! $this->pjax() && $this->acceptsAnyContentType()) || $this->wantsJson();
+    }
+
+    /**
+     * Determine if the current request is asking for JSON.
+     *
+     * @return bool
+     */
+    public function wantsJson()
+    {
+        $acceptable = $this->getAcceptableContentTypes();
+
+        return isset($acceptable[0]) && Str::contains(strtolower($acceptable[0]), ['/json', '+json']);
+    }
+
+    /**
+     * Get the request's data (form parameters or JSON).
+     *
+     * @return array
+     */
+    public function data()
+    {
+        if ($this->isJson()) {
+            return $this->json();
+        }
+
+        return $this->all();
+    }
+
+    /**
+     * Gets a list of content types acceptable by the client browser.
+     *
+     * @return array List of content types in preferable order
+     */
+    public function getAcceptableContentTypes()
+    {
+        if ($this->acceptableContentTypes) {
+            return $this->acceptableContentTypes;
+        }
+
+        return $this->acceptableContentTypes = array_map(function ($itemValue) {
+            $bits = preg_split('/\s*(?:;*("[^"]+");*|;*(\'[^\']+\');*|;+)\s*/', $itemValue, 0, PREG_SPLIT_NO_EMPTY | PREG_SPLIT_DELIM_CAPTURE);
+            $value = array_shift($bits);
+
+            return ($start = substr($value, 0, 1)) === substr($value, -1) && ($start === '"' || $start === '\'') ? substr($value, 1, -1) : $value;
+        }, preg_split('/\s*(?:,*("[^"]+"),*|,*(\'[^\']+\'),*|,+)\s*/', $this->header('accept'), 0, PREG_SPLIT_NO_EMPTY | PREG_SPLIT_DELIM_CAPTURE));
+    }
+
+    /**
+     * Determines whether the current requests accepts a given content type.
+     *
+     * @param  string|array  $contentTypes
+     * @return bool
+     */
+    public function accepts($contentTypes)
+    {
+        $accepts = $this->getAcceptableContentTypes();
+
+        if (count($accepts) === 0) {
+            return true;
+        }
+
+        $types = (array) $contentTypes;
+
+        foreach ($accepts as $accept) {
+            if ($accept === '*/*' || $accept === '*') {
+                return true;
+            }
+
+            foreach ($types as $type) {
+                $accept = strtolower($accept);
+
+                $type = strtolower($type);
+
+                if ($this->matchesType($accept, $type) || $accept === strtok($type, '/').'/*') {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Determine if the current request accepts any content type.
+     *
+     * @return bool
+     */
+    public function acceptsAnyContentType()
+    {
+        $acceptable = $this->getAcceptableContentTypes();
+
+        return count($acceptable) === 0 || (
+            isset($acceptable[0]) && ($acceptable[0] === '*/*' || $acceptable[0] === '*')
+        );
+    }
+
+    /**
+     * Determines whether a request accepts JSON.
+     *
+     * @return bool
+     */
+    public function acceptsJson()
+    {
+        return $this->accepts('application/json');
+    }
+
+    /**
+     * Determines whether a request accepts HTML.
+     *
+     * @return bool
+     */
+    public function acceptsHtml()
+    {
+        return $this->accepts('text/html');
+    }
+
+    /**
+     * Determine if the given content types match.
+     *
+     * @param  string  $actual
+     * @param  string  $type
+     * @return bool
+     */
+    public static function matchesType($actual, $type)
+    {
+        if ($actual === $type) {
+            return true;
+        }
+
+        $split = explode('/', $actual);
+
+        return isset($split[1]) && preg_match('#'.preg_quote($split[0], '#').'/.+\+'.preg_quote($split[1], '#').'#', $type);
+    }
+
+    /**
+     * Get the bearer token from the request headers.
+     *
+     * @return string|null
+     */
+    public function bearerToken()
+    {
+        $header = $this->header('Authorization') ?: '';
+
+        if (Str::startsWith($header, 'Bearer ')) {
+            return Str::substr($header, 7);
+        }
+    }
+
+    /**
      * Returns true if the request is an XMLHttpRequest.
      *
      */
@@ -467,6 +734,51 @@ class Request
     }
 
     /**
+     * Determine if the given offset exists.
+     *
+     * @param  string  $offset
+     * @return bool
+     */
+    public function offsetExists($offset)
+    {
+        return $this->has($offset);
+    }
+
+    /**
+     * Get the value at the given offset.
+     *
+     * @param  string  $offset
+     * @return mixed
+     */
+    public function offsetGet($offset)
+    {
+        return $this->get($offset);
+    }
+
+    /**
+     * Set the value at the given offset.
+     *
+     * @param  string  $offset
+     * @param  mixed  $value
+     * @return void
+     */
+    public function offsetSet($offset, $value)
+    {
+        $this->parameters->offsetSet($offset, $value);
+    }
+
+    /**
+     * Remove the value at the given offset.
+     *
+     * @param  string  $offset
+     * @return void
+     */
+    public function offsetUnset($offset)
+    {
+        $this->parameters->offsetUnset($offset);
+    }
+
+    /**
      * Triggered when this class is treated like a string.
      *
      * @return string
@@ -474,5 +786,16 @@ class Request
     public function __toString()
     {
         return serialize($this);
+    }
+
+    /**
+     * Get an input element from the request.
+     *
+     * @param  string  $key
+     * @return mixed
+     */
+    public function __get($key)
+    {
+        return Arr::get($this->all(), $key);
     }
 }
