@@ -315,15 +315,21 @@ class Str
     }
 
     /**
-     * Determine if a string contains a given substring.
+     * Determine if a given string contains a given substring.
      *
-     * @param  string  $haystack
-     * @param  string  $needle
+     * @param  string        $haystack
+     * @param  string|array  $needles
      * @return bool
      */
-    public static function contains($haystack, $needle)
+    public static function contains($haystack, $needles)
     {
-        return $needle !== '' && self::strpos($haystack, $needle) !== false;
+        foreach ((array) $needles as $needle) {
+            if ($needle != '' && mb_strpos($haystack, $needle) !== false) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
