@@ -2,48 +2,32 @@
 
 namespace Core\Redis;
 
-use Exception;
 use Redis;
-use Support\Helper\Arr;
-use Support\Queue\RedisQueue;
+use Core\Support\Helper\Arr;
 
+/**
+ * Redis connecter.
+ *
+ * @author Nguyen The Manh <manh.nguyen3@ntq-solution.com.vn>
+ */
 class Connecter
 {
-    private $redis;
-
     public function __construct()
     {
         if (!extension_loaded('redis')) {
             throw new \RuntimeException("Redis extension is require.");
         }
-        $this->redis = new Redis();
     }
 
-    public function connect(array $config, array $options)
+    public function connect(array $config = [], array $options = [])
     {
-        $connector = function () use ($config, $options) {
-            return $this->createClient(array_merge(
-                $config, $options, Arr::pull($config, 'options', [])
-            ));
-        };
+        if (empty($config)) {
+            $config = config('database.redis.default');
+        }
 
-        return new RedisQueue($connector(), $connector, $config);
-        $connection = new RedisQueue(
-            $this->redis, $config['queue'],
-            Arr::get($config, 'connection', $this->connection),
-            Arr::get($config, 'retry_after', 60)
-        );
-        return
-        // dd(get_class_methods($this->redis));
-        $host = config('database.redis.host');
-        $port = config('database.redis.port');
-        $username = config('database.redis.username');
-        $password = config('database.redis.password');
-        $database = config('database.redis.database');
-        $this->redis->connect(config('database.redis.host'), config('database.redis.port'));
-        $this->redis->auth(config('database.redis.password'));
-        // $this->redis->rawcommand("auth", config('database.redis.username'), config('database.redis.password'));
-        $this->redis->select(config('database.redis.database', 0));
+        return $this->createClient(array_merge(
+            $config, $options, Arr::pull($config, 'options', [])
+        ));
     }
 
     /**
@@ -56,7 +40,7 @@ class Connecter
      */
     protected function createClient(array $config)
     {
-        return tap($this->redis, function ($client) use ($config) {
+        return tap(new Redis, function ($client) use ($config) {
             $client->connect($config['host'], $config['port']);
 
             if (! empty($config['password'])) {

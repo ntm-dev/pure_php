@@ -98,7 +98,8 @@ class Route
 
     public static function dispatch()
     {
-        if (!array_key_exists(ltrim(Request::getInstance()->getPathInfo(), "/"), self::getRequestMethodRouteList())) {
+        $path = ltrim(Request::getInstance()->getPathInfo(), "/") ?: '/';
+        if (!array_key_exists($path, self::getRequestMethodRouteList())) {
             $publicLocation = public_path() . Request::getInstance()->getPathInfo();
             if (file_exists($publicLocation)) {
                 return readfile($publicLocation);
@@ -122,7 +123,7 @@ class Route
 
     private static function getRoute($uri = '')
     {
-        return self::$routes[self::getRequestMethod()][$uri ?: ltrim(Request::getInstance()->getPathInfo(), "/")];
+        return self::$routes[self::getRequestMethod()][$uri ?: (ltrim(Request::getInstance()->getPathInfo(), "/") ?: '/')];
     }
 
     private static function getCurrentRoute()

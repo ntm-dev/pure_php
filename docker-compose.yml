@@ -16,6 +16,9 @@ services:
       - "DB_HOST=pure-mysql"
     links:
       - pure-mysql
+    networks:
+      - redis_default
+      - pure_php_default
 
   pure-nginx:
     image: nginx
@@ -49,3 +52,8 @@ services:
       /usr/local/bin/docker-entrypoint.sh --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --sql-mode=''"
     ports:
         - 33062:3306
+networks:
+  redis_default:
+    external: true
+  pure_php_default:
+    external: true
