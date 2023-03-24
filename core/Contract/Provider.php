@@ -2,6 +2,8 @@
 
 namespace Core\Contract;
 
+use Core\Application;
+
 /**
  * Provider contract.
  *
@@ -22,4 +24,6 @@ interface Provider
      * @return void
      */
     public function boot();
+
+    public function setApplicationContainer(Application $app): void;
 }

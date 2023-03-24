@@ -4,6 +4,7 @@ namespace Core\Http;
 
 use ArrayObject;
 use ArrayAccess;
+use Core\File\Upload;
 use Core\Http\ServerBag;
 use Core\Pattern\Singleton;
 use Core\Support\Helper\Str;
@@ -48,6 +49,11 @@ class Request implements ArrayAccess
      * @var  array
      */
     public $headers = [];
+
+    /**
+     * @var array
+     */
+    protected array $acceptableContentTypes;
 
     /** 
      * Request session.
@@ -739,7 +745,7 @@ class Request implements ArrayAccess
      * @param  string  $offset
      * @return bool
      */
-    public function offsetExists($offset)
+    public function offsetExists($offset): bool
     {
         return $this->has($offset);
     }
@@ -750,7 +756,7 @@ class Request implements ArrayAccess
      * @param  string  $offset
      * @return mixed
      */
-    public function offsetGet($offset)
+    public function offsetGet($offset): mixed
     {
         return $this->get($offset);
     }
@@ -762,7 +768,7 @@ class Request implements ArrayAccess
      * @param  mixed  $value
      * @return void
      */
-    public function offsetSet($offset, $value)
+    public function offsetSet($offset, $value): void
     {
         $this->parameters->offsetSet($offset, $value);
     }
@@ -773,7 +779,7 @@ class Request implements ArrayAccess
      * @param  string  $offset
      * @return void
      */
-    public function offsetUnset($offset)
+    public function offsetUnset($offset): void
     {
         $this->parameters->offsetUnset($offset);
     }

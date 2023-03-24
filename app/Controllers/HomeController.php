@@ -10,6 +10,9 @@ use Core\Support\Facades\View;
 
 class HomeController extends BaseController
 {
+    /** @var \Core\Http\Request */
+    private Request $request;
+
     public function __construct(Request $request)
     {
         $this->request = $request;

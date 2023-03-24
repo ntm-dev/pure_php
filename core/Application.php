@@ -114,7 +114,7 @@ class Application extends Container
                 throw new RuntimeException(sprintf("%s must be instance of %s", get_class($provider), Provider::class));
             }
             $loadedProviders[] = $provider;
-            $provider->app = $this;
+            $provider->setApplicationContainer($this);
             $provider->register();
         }
 

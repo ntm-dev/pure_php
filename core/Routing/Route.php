@@ -54,7 +54,7 @@ class Route
         } elseif (is_string($attributes)) {
             $prefix = $attributes;
         } else {
-            throw new UnexpectedValueException('Argument #1 ($attributes) must be of type array or string, %s given', gettype($attributes));
+            throw new UnexpectedValueException(sprintf('Argument #1 ($attributes) must be of type array or string, %s given', gettype($attributes)));
         }
 
         $groupStack = static::$groupStack;
