@@ -16,7 +16,7 @@ use Core\Database\ArrayIterator;
  *
  * @method \ArrayIterator append(mixed $value): void
  * @method \ArrayIterator asort(int $flags = SORT_REGULAR): bool
- * @method \ArrayIterator count(): int
+ * @method int count() \ArrayIterator::count(): int
  * @method \ArrayIterator current(): mixed
  * @method \ArrayIterator getArrayCopy(): array
  * @method \ArrayIterator getFlags(): int
@@ -91,7 +91,7 @@ class Collection implements ArrayAccess, IteratorAggregate
     public function avg()
     {
         $items = $this->map(function ($value) {
-            return ($value);
+            return $value;
         });
         if ($count = $items->count()) {
             return $items->sum() / $count;
@@ -151,7 +151,7 @@ class Collection implements ArrayAccess, IteratorAggregate
      *
      * @return \ArrayIteratorr<TKey, TValue>
      */
-    public function getIterator()
+    public function getIterator(): Traversable
     {
         return $this->attributes;
     }

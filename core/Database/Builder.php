@@ -3,14 +3,11 @@
 namespace Core\Database;
 
 use Core\Database\Model;
-use Core\Pattern\Singleton;
 use Core\Support\Helper\Arr;
 use Core\Database\Connectors\Connector;
 
 class Builder
 {
-    use Connector, Singleton;
-
     /**
      * Selected columns.
      *
@@ -37,7 +34,7 @@ class Builder
      *
      * @var array
      */
-    public $orders;
+    public $orders = [];
 
     /**
      * The maximum number of records to return.
@@ -55,6 +52,12 @@ class Builder
 
     public $model;
 
+    /** @var string */
+    private string $table;
+
+    /** @var object */
+    private static $connection;
+
     public function __construct(Model $model = null)
     {
         if ($model) {
@@ -70,7 +73,24 @@ class Builder
      */
     protected function getConnection()
     {
-        return static::$connection ?: $this->connect();
+        if (!static::$connection) {
+            static::$connection = new Connector;
+        }
+
+        return $this->connect();
+    }
+
+    private function connect()
+    {
+        if (!static::$connection) {
+            static::$connection = new Connector;
+        }
+
+        if (isset($this->model->connection)) {
+            static::$connection->setConnectionName($this->model->connection);
+        }
+
+        return static::$connection->connect();
     }
 
     /**

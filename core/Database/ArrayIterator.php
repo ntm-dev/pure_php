@@ -1,6 +1,8 @@
 <?php
 
-namespace Core\Database;;
+namespace Core\Database;
+
+use Traversable;
 
 class ArrayIterator implements \ArrayAccess, \IteratorAggregate
 {
@@ -26,7 +28,7 @@ class ArrayIterator implements \ArrayAccess, \IteratorAggregate
      *
      * @return \ArrayIterator<TKey, TValue>
      */
-    public function getIterator()
+    public function getIterator(): Traversable
     {
         return new \ArrayIterator($this->attributes);
     }
