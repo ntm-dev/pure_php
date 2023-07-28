@@ -57,7 +57,7 @@ function view($template, $data = [])
 
 function config($key, $default = null)
 {
-    return Arr::get(Application::getInstance()->getConfig(), $key, $default);
+    return Arr::get(app()->getConfig(), $key, $default);
 }
 
 function abort(int $statusCode)
@@ -84,4 +84,24 @@ function get_last_fatal_error()
     }
 
     return [];
+}
+
+/**
+ * Get container instance or make a service with container.
+ *
+ * @return \Core\Container\Container|mixed;
+ */
+function container($service = '', $share = false)
+{
+    $container = Core\Container\Container::getInstance();
+
+    if ($service) {
+        if ($share && !$container->bound($service)) {
+            $container->singleton($service);
+        }
+
+        return $container->make($service);
+    }
+
+    return $container;
 }
