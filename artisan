@@ -1,5 +1,8 @@
 <?php
 
-require_once __DIR__ . '/bootstrap.php';
+require __DIR__ . "/bootstrap/functions.php";
+require __DIR__ . "/vendor/autoload.php";
 
-app()->make(Core\Console\Kernel::class)->run();
+/** @var \Core\Console\Kernel */
+$kernel = container(Core\Console\Kernel::class);
+$kernel->run();
