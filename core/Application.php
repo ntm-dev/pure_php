@@ -5,6 +5,7 @@ namespace Core;
 use Dotenv\Dotenv;
 use RuntimeException;
 use Core\Routing\Route;
+use Core\Pattern\Singleton;
 use Core\Contract\Provider;
 use Core\Support\Helper\Str;
 use Core\Container\Container;
@@ -14,6 +15,8 @@ use Core\Http\Exception\HttpException;
 
 class Application extends Container
 {
+    use Singleton;
+
     /**
      * The registered config.
      *
@@ -50,12 +53,13 @@ class Application extends Container
     }
 
     /**
-     * Bootstrapt application
+     * Bootstrap application
      *
      * @return void
      */
     private function bootstrap()
     {
+        self::setInstance($this);
         $this->loadConfig();
         $this->loadAlias();
         $this->loadProvider();
