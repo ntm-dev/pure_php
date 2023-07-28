@@ -38,7 +38,7 @@ abstract class Facade
             return static::$resolvedInstance[$accessor];
         }
 
-        return static::$resolvedInstance[$accessor] = app()->make($accessor);
+        return static::$resolvedInstance[$accessor] = container($accessor);
     }
 
     /**
