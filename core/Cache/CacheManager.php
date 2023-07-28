@@ -12,6 +12,11 @@ use Core\Contract\Cache;
 class CacheManager implements Cache
 {
     /**
+     * Cache prefix
+     */
+    protected string $prefix;
+
+    /**
      * Create a new Cache store.
      *
      * @param  string  $prefix

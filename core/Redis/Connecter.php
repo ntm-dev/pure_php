@@ -8,7 +8,7 @@ use Core\Support\Helper\Arr;
 /**
  * Redis connecter.
  *
- * @author Nguyen The Manh <manh.nguyen3@ntq-solution.com.vn>
+ * @author Nguyen The Manh <nguyenthemanh26011996@gmail.com>
  */
 class Connecter
 {
