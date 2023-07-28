@@ -6,11 +6,13 @@ use Core\Console\Command;
 use Core\Console\Grammar;
 use Core\Support\Helper\Str;
 use Core\Console\ColorFormat;
+use Core\Database\Migrations\CommandMigrator;
+use Core\Database\Migrations\MigrationCreator;
 
 /**
  * Command kernel class.
  *
- * @author Nguyen The Manh <manh.nguyen3@ntq-solution.com.vn>
+ * @author Nguyen The Manh <nguyenthemanh26011996@gmail.com>
  */
 class Kernel
 {
@@ -25,8 +27,8 @@ class Kernel
 
     public function __construct()
     {
-        $this->grammar = app()->make(Grammar::class, true);
-        $this->command = app()->make(Command::class, true);
+        $this->grammar = container(Grammar::class, true);
+        $this->command = container(Command::class, true);
     }
 
     public function run()
@@ -76,9 +78,9 @@ class Kernel
     {
         $commandMap = $this->commandMapping();
         $classMap = $commandMap[$command['method'].($command['target'] ? ":{$command['target']}" : "")];
-        $commandInstance = app()->make($classMap['class'], true);
+        $commandInstance = container($classMap['class'], true);
 
-        error_reporting(0);
+        // error_reporting(0);
         try {
             $result = $commandInstance->{$classMap['method']}(...$command['arguments']);
         } catch (\Exception $e) {
@@ -99,6 +101,27 @@ class Kernel
         }
 
         return self::$commandMap = [
+            'make:migration' => [
+                'class' => MigrationCreator::class,
+                'method' => 'create',
+                'callback' => function($filename) {
+                    $underscoreText = $this->underscoreText($filename);
+
+                    if (false === $filename) {
+                        return $this->command->textRed("Unable to create migration {$underscoreText}");
+                    }
+
+                    return $this->command->textGreen("Created {$underscoreText}");
+                }
+            ],
+            'migrate' => [
+                'class' => CommandMigrator::class,
+                'method' => 'migrate',
+            ],
+            'migrate:rollback' => [
+                'class' => CommandMigrator::class,
+                'method' => 'rollback',
+            ],
         ];
     }
 

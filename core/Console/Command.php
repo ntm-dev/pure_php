@@ -55,15 +55,9 @@ class Command extends AbstractCommand
         return $input;
     }
 
-    /**
-     * Create a yes/no question.
-     *
-     * @param  string $question
-     * @return bool
-     */
-    public function confirm(string $question)
+    public function confirm($question)
     {
-        $question = $this->applyStyle("{$question} (yes/no)", 'green');
+        echo $this->format('bright-green')->apply("{$question} (yes/no)\n>", false);
 
         $input = readline("\n$question:\n> ");
         if (preg_match("/^[y|Y]/", $input)) {
@@ -95,25 +89,25 @@ class Command extends AbstractCommand
      * @param  array  $options
      * @return mixed
      */
-    public function choise(string $question, array $options)
+    public function choice(string $question, array $options)
     {
         $question = $this->applyStyle($question, 'green');
         $optionStr = '';
 
         foreach ($options as $key => $option) {
-            $key = $this->applyStyle($key, 'yellow');
+            $key = $this->format('yellow')->apply($key, false);
             $optionStr .= " [{$key}] $option\n";
         }
 
         $question = $optionStr ? "{$question}: \n$optionStr" : $question;
 
-        $choise = readline($this->applyStyle("\n{$question}> ", 'green'));
+        $choice = readline($this->applyStyle("\n{$question}> ", 'green'));
 
-        if (!in_array($choise, array_keys($options))) {
+        if (!in_array($choice, array_keys($options))) {
             return '';
         }
 
-        return $options[$choise];
+        return $options[$choice];
     }
 
     /**
@@ -190,7 +184,7 @@ class Command extends AbstractCommand
      *
      * @return RuntimeException|true
      */
-    private function isExistPogressBar()
+    private function isExistProgressBar()
     {
         if (empty($this->progressBar)) {
             throw new RuntimeException("Please call progressStart method to create progress bar first");
@@ -207,7 +201,7 @@ class Command extends AbstractCommand
      */
     public function progressAdvance(int $step = 1)
     {
-        $this->isExistPogressBar();
+        $this->isExistProgressBar();
 
         return $this->progressBar->advance($step);
     }
@@ -227,6 +221,15 @@ class Command extends AbstractCommand
         echo "\n" . $this->applyStyle($message, $foreground, $background) . "\n\n";
     }
 
+    public function underscore(string $message, bool $echo = true)
+    {
+        if ($echo) {
+            echo $this->applyStyle($message, '', '', ['underscore']);
+        }
+
+        return $this->applyStyle($message, '', '', ['underscore'], false);
+    }
+
     /**
      * If call undefined method and method name has prefix is text and exist ColorFormat color, show this message with that color.
      *
@@ -240,6 +243,13 @@ class Command extends AbstractCommand
         if (preg_match("/^text/", $name) && (isset(ColorFormat::COLORS[strtolower($color)])
             || isset(ColorFormat::BRIGHT_COLORS[$color = Str::kebab($color)]))) {
             return $this->showMessage($arguments[0], strtolower($color));
+        }
+
+        $background = ltrim($name, 'bg');
+
+        if (preg_match("/^bg/", $name) && (!is_null(ColorFormat::COLORS[strtolower($background)])
+            || !is_null(ColorFormat::BRIGHT_COLORS[$background = Str::kebab($background)])) ) {
+            return $this->showMessage($arguments[0], '', strtolower($background));
         }
 
         throw new BadMethodCallException("Method $name do not exist or not allow call.");
