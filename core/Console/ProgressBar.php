@@ -128,9 +128,15 @@ final class ProgressBar
         }
     }
 
-    public function __destruct()
+    public function finish()
     {
         $this->endProgress = true;
-        echo "\033[?25h\n"; //show cursor and break line
+        echo "\n";
+        fprintf(STDOUT, "\033[?25h"); //show cursor
+    }
+
+    public function __destruct()
+    {
+        $this->finish();
     }
 }

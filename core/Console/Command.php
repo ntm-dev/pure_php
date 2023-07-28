@@ -16,6 +16,11 @@ use Core\Support\Helper\Str;
 class Command
 {
     /**
+     * @var \Core\Console\ProgressBar
+     */
+    public ProgressBar $progressBar ;
+
+    /**
      * Create a question.
      *
      * @param  string $question
