@@ -137,15 +137,13 @@ class CommandMigrator
     {
         $this->registerShutdownFunction();
         try {
-            if (!require $filename) {
+            if (!$migration = require $filename) {
                 $this->command->textRed("{$filename} does not exists.");
                 die;
             }
-            $className = Arr::last(get_declared_classes());
-            $class = new $className;
 
-            if ($sql = $class->up()) {
-                $this->dbConnection($class->getConnection())->connect()->exec($sql);
+            if ($sql = $migration->up()) {
+                $this->dbConnection($migration->getConnection())->connect()->exec($sql);
             }
         } catch (Exception $e) {
             throw $e;
