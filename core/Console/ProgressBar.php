@@ -2,7 +2,7 @@
 
 namespace Core\Console;
 
-use Core\Console\Formater;
+use Core\Console\ColorFormat;
 
 /**
  * ProgressBar class.
@@ -109,11 +109,11 @@ final class ProgressBar
 
         $total = "{$this->currenProcess}/" . ($this->currenProcess > $this->maxProcess ? $this->currenProcess : $this->maxProcess);
         echo $this->progressBar = "{$backward}{$colorCode} {$total} "
-            . Formater::ESCAPE
+            . ColorFormat::ESCAPE
             . " [{$colorCode}{$bar}"
-            . Formater::ESCAPE
+            . ColorFormat::ESCAPE
             . "] {$colorCode}{$percent} %"
-            . Formater::ESCAPE;
+            . ColorFormat::ESCAPE;
     }
 
     public function advance($step = 1)

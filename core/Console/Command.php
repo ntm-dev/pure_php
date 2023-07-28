@@ -2,23 +2,24 @@
 
 namespace Core\Console;
 
-use BadMethodCallException;
-use Core\Console\Formater;
-use Core\Console\ProgressBar;
 use RuntimeException;
+use BadMethodCallException;
 use Core\Support\Helper\Str;
+use Core\Console\ColorFormat;
+use Core\Console\ProgressBar;
+use Core\Contract\Command as AbstractCommand;
 
 /**
  * Command class.
  *
  * @author Nguyen The Manh <nguyenthemanh26011996@gmail.com>
  */
-class Command
+class Command extends AbstractCommand
 {
     /**
      * @var \Core\Console\ProgressBar
      */
-    public ProgressBar $progressBar ;
+    public ProgressBar $progressBar;
 
     /**
      * Create a question.
@@ -84,7 +85,7 @@ class Command
      */
     private function applyStyle(string $text, string $foreground = '', string $background = '', array $options = [])
     {
-        return (new Formater($foreground, $background, $options))->apply($text);
+        return (new ColorFormat($foreground, $background, $options))->apply($text);
     }
 
     /**
@@ -227,7 +228,7 @@ class Command
     }
 
     /**
-     * If call undefined method and method name has prefix is text and exist Formater color, show this message with that color.
+     * If call undefined method and method name has prefix is text and exist ColorFormat color, show this message with that color.
      *
      * @param  string $name
      * @param  array  $arguments
@@ -236,7 +237,8 @@ class Command
     public function __call($name, $arguments)
     {
         $color = ltrim($name, 'text');
-        if (preg_match("/^text/", $name) && (isset(Formater::COLORS[strtolower($color)]) || isset(Formater::BRIGHT_COLORS[$color = Str::kebab($color)])) ) {
+        if (preg_match("/^text/", $name) && (isset(ColorFormat::COLORS[strtolower($color)])
+            || isset(ColorFormat::BRIGHT_COLORS[$color = Str::kebab($color)]))) {
             return $this->showMessage($arguments[0], strtolower($color));
         }
 
