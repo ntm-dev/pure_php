@@ -5,6 +5,7 @@ namespace Core\Database\Migrations;
 use Core\Support\Helper\Str;
 use UnexpectedValueException;
 use Core\File\LocalAdapter;
+use Core\Contract\CommandExecutor;
 use Core\Database\Migrations\Migration;
 
 /**
@@ -12,7 +13,7 @@ use Core\Database\Migrations\Migration;
  *
  * @author Nguyen The Manh <nguyenthemanh26011996@gmail.com>
  */
-class MigrationCreator
+class MigrationCreator implements CommandExecutor
 {
     /** @var string */
     private static ?string $path = null;

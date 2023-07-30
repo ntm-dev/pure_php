@@ -8,6 +8,7 @@ use Core\File\LocalAdapter;
 use Core\Support\Helper\Arr;
 use Core\Support\Helper\Str;
 use Core\Console\ColorFormat;
+use Core\Contract\CommandExecutor;
 use Core\Database\Connectors\Connector;
 
 /**
@@ -15,7 +16,7 @@ use Core\Database\Connectors\Connector;
  *
  * @author Nguyen The Manh <nguyenthemanh26011996@gmail.com>
  */
-class CommandMigrator
+class CommandMigrator implements CommandExecutor
 {
     /** @var \Core\Console\Command */
     protected $command;

@@ -2,10 +2,13 @@
 
 namespace Core\Console;
 
+use RuntimeException;
+use ReflectionMethod;
 use Core\Console\Command;
 use Core\Console\Grammar;
 use Core\Support\Helper\Str;
 use Core\Console\ColorFormat;
+use Core\Contract\CommandExecutor;
 use Core\Database\Migrations\CommandMigrator;
 use Core\Database\Migrations\MigrationCreator;
 
@@ -31,36 +34,159 @@ class Kernel
         $this->command = container(Command::class, true);
     }
 
+    /**
+     * Run command
+     */
     public function run()
     {
-        $command = $this->grammar->getCommand();
+        $input = $this->grammar->getInput();
 
-        if (empty($command['method'])) {
+        set_error_handler([$this, 'errorHandler']);
+        set_exception_handler([$this, 'exceptionHandler']);
+
+        $executor = $this->getCommandExecutor($input);
+        $classMap = $this->getClassMap($input);
+
+        return $this->doRun($executor, $classMap, $input);
+    }
+
+    /**
+     * Do run
+     *
+     * @param  \Core\Contract\CommandExecutor|null $executor
+     * @param  array $classMap
+     * @param  array $input
+     */
+    private function doRun($executor, $classMap, $input)
+    {
+        error_reporting(0);
+
+        $this->validate($executor, $classMap, $input);
+
+        return $this->runCommand($executor, $classMap['method'], $input['arguments'], $classMap["callback"] ?? null);
+    }
+
+    /**
+     * Validate command
+     *
+     * @param  \Core\Contract\CommandExecutor|null $executor
+     * @param  array $classMap
+     * @param  array $input
+     * @return void
+     * @throws \RuntimeException
+     */
+    private function validate($executor, $classMap, $input)
+    {
+        if (empty($input['method'])) {
             return $this->command->bgRed("Command method can not be empty.");
         }
 
-        $token = $command['method'].($command['target'] ? ":{$command['target']}" : "");
-        if (empty($command['method']) || !in_array($token, array_keys($this->commandMapping()))) {
+        $token = $input['method'].($input['target'] ? ":{$input['target']}" : "");
+        if (empty($input['method']) || !in_array($token, array_keys($this->commandMapping()))) {
             $output = sprintf("Command \"%s\" is not defined.", $token);
             if (!empty($suggestions = $this->suggestCommand($token))) {
                 $output .= "\n\nDid you mean:\n\t" . implode("\n\t", $suggestions);
             }
 
-            return $this->command->bgRed($output);
+            $this->command->bgRed($output);
+            exit();
         }
 
-        set_error_handler([$this, 'setErrorHandler']);
-
-        return $this->runCommand($command);
+        $this->validateArgument($executor, $classMap['method'], $input['arguments']);
     }
 
-    public function setErrorHandler()
+    /**
+     * Validate command argument
+     *
+     * @param  \Core\Contract\CommandExecutor|null $executor
+     * @param  array $classMap
+     * @param  array $input
+     * @return void
+     * @throws \RuntimeException
+     */
+    private function validateArgument($executor, $method, $arguments)
+    {
+        $requireParams = $this->getRequireParameter($executor, $method);
+
+        foreach ($requireParams as $key => $param) {
+            if (!$param->isDefaultValueAvailable() && !isset($arguments[$key])) {
+                throw new RuntimeException(
+                    sprintf(
+                        'Not enough arguments (missing: "%s")',
+                        $param->getName()
+                    )
+                );
+            }
+        }
+    }
+
+    /**
+     * Get require parameter for command executor
+     *
+     * @param  \Core\Contract\CommandExecutor $executor
+     * @param  string $method
+     * @return \ReflectionParameter
+     */
+    private function getRequireParameter(CommandExecutor $executor, string $method)
+    {
+        return (new ReflectionMethod($executor, $method))->getParameters();
+    }
+
+    /**
+     * Get class map
+     *
+     * @param  array $input
+     * @return string|false
+     */
+    private function getClassMap($input)
+    {
+        $commandMap = $this->commandMapping();
+
+        return $commandMap[$input['method'].($input['target'] ? ":{$input['target']}" : "")] ?? false;
+    }
+
+    /**
+     * Get command executor
+     *
+     * @param  array $input
+     * @return object|null
+     */
+    private function getCommandExecutor($input)
+    {
+        $class = $this->getClassMap($input);
+        if (!$class) {
+            return null;
+        }
+
+        return container($class, true);
+    }
+
+    /**
+     * Handle error
+     */
+    public function errorHandler()
     {
         list ( $errno, $errstr, $errFile, $errLine, $errContext) = func_get_args();
 
         dd(get_defined_vars());
     }
 
+    /**
+     * Handle exception
+     *
+     * @param  \Throwable $exception
+     */
+    public function exceptionHandler(\Throwable $exception)
+    {
+        $this->command->error($exception->getMessage());
+    }
+
+    /**
+     * get suggest command
+     *
+     * @param  array  $input
+     * @return array
+     */
     protected function suggestCommand($input)
     {
         $suggestions = [];
@@ -74,21 +200,22 @@ class Kernel
         return $suggestions;
     }
 
-    protected function runCommand($command)
+    /**
+     * Run command
+     *
+     * @param  \Core\Contract\CommandExecutor|null $executor
+     * @param  string   $method
+     * @param  array    $arguments
+     * @param  callable $callback
+     * @return mixed
+     * @throws \Exception
+     */
+    protected function runCommand(CommandExecutor $executor, $method, $arguments, callable $callback = null)
     {
-        $commandMap = $this->commandMapping();
-        $classMap = $commandMap[$command['method'].($command['target'] ? ":{$command['target']}" : "")];
-        $commandInstance = container($classMap['class'], true);
+        $result = $executor->{$method}(...$arguments);
 
-        // error_reporting(0);
-        try {
-            $result = $commandInstance->{$classMap['method']}(...$command['arguments']);
-        } catch (\Exception $e) {
-            dd($e);
-        }
-
-        if (isset($classMap['callback'])) {
-            $classMap['callback']($result);
+        if (!is_null($callback)) {
+            $callback($result);
         }
 
         return $result;
