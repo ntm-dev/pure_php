@@ -129,9 +129,17 @@ class Str
      */
     public static function afterLast($subject, $search)
     {
-        $offset = self::strrpos($subject, $search) + self::strlen($search);
+        if ($search === '') {
+            return $subject;
+        }
 
-        return self::substr($subject, $offset);
+        $position = strrpos($subject, (string) $search);
+
+        if ($position === false) {
+            return $subject;
+        }
+
+        return substr($subject, $position + strlen($search));
     }
 
     /**
