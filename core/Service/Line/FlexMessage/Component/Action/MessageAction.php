@@ -73,7 +73,6 @@ class MessageAction implements ActionInterface
         return json_encode($this->toArray());
     }
 
-
     public function __toString()
     {
         return $this->toJson();

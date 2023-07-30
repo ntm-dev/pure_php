@@ -3,9 +3,10 @@
 namespace Core\Service\Line\FlexMessage\Bubble;
 
 use Core\Contract\ArrayAble;
-use Core\Service\Line\FlexMessage\Enum\BubbleSize;
 use Core\Service\Line\FlexMessage\Component\Box;
 use Core\Service\Line\FlexMessage\Enum\Direction;
+use Core\Service\Line\FlexMessage\Enum\BubbleSize;
+use Core\Service\Line\FlexMessage\Component\Image;
 
 class Message implements ArrayAble
 {
@@ -15,16 +16,48 @@ class Message implements ArrayAble
     protected Direction $direction = Direction::LeftToRight;
 
     public Box $header;
+    public Box|Image $hero;
     public Box $body;
     public Box $footer;
     public Style $style;
 
-    public function __construct(Box $header, Box $body, Box $footer, Style $style)
+    public function __construct(Box $body, Style $style)
     {
-        $this->header = $header;
         $this->body = $body;
-        $this->footer = $footer;
         $this->style = $style;
+    }
+
+    public function hero(Box|Image $hero = null)
+    {
+        if (func_num_args()) {
+            $this->hero = $hero;
+
+            return $this;
+        }
+
+        return $this->header ?? $this->header = app()->make(Box::class);
+    }
+
+    public function header(Box $header = null)
+    {
+        if (func_num_args()) {
+            $this->header = $header;
+
+            return $this;
+        }
+
+        return $this->header ?? $this->header = app()->make(Box::class);
+    }
+
+    public function footer(Box $footer = null)
+    {
+        if (func_num_args()) {
+            $this->footer = $footer;
+
+            return $this;
+        }
+
+        return $this->footer ?? $this->footer = app()->make(Box::class);
     }
 
     public function size(BubbleSize $size)
@@ -57,9 +90,14 @@ class Message implements ArrayAble
             'type' => self::TYPE,
             'size' => $this->size,
             'body' => $this->body->toArray(),
-            'footer' => $this->footer->toArray(),
             'styles' => $this->style->toArray(),
         ];
+
+        foreach (['header', 'hero', 'footer'] as $property) {
+            if (isset($this->{$property})) {
+                $value[$property] = $this->{$property}->toArray();
+            }
+        }
 
         return array_filter($value, function($v) { return !empty($v);});
     }
