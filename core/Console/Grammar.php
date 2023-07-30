@@ -12,7 +12,7 @@ use Core\Support\Helper\Arr;
 class Grammar
 {
     /** @var array */
-    private $input;
+    private array $input = [];
 
     public function __construct(array $argv = null)
     {
@@ -34,7 +34,7 @@ class Grammar
         return $this->input;
     }
 
-    public function getCommand()
+    public function getInput()
     {
         $options = $this->getOptions();
         $firstOption = Arr::pull($options, 0);
@@ -43,7 +43,7 @@ class Grammar
         return [
             'method' => $firstOption[0],
             'target' => isset($firstOption[1]) ? $firstOption[1] : null,
-            'arguments' => $options,
+            'arguments' => array_values($options),
         ];
     }
 
