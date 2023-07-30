@@ -1,6 +1,6 @@
 <?php
 
-namespace Core\Service\Line\FlexMessage;
+namespace Core\Service\Line\FlexMessage\Enum;
 
 /**
  *The direction of the main axis is determined by a box's type. Specify the type of any box through its layout property.

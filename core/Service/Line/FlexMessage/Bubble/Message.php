@@ -2,39 +2,29 @@
 
 namespace Core\Service\Line\FlexMessage\Bubble;
 
-use Core\Support\Helper\Str;
-use UnexpectedValueException;
+use Core\Contract\ArrayAble;
 use Core\Service\Line\FlexMessage\Enum\BubbleSize;
 use Core\Service\Line\FlexMessage\Component\Box;
 use Core\Service\Line\FlexMessage\Enum\Direction;
 
-class Message
+class Message implements ArrayAble
 {
     private const TYPE = 'bubble';
 
     protected BubbleSize $size = BubbleSize::Mega;
     protected Direction $direction = Direction::LeftToRight;
 
-    public string $altText;
     public Box $header;
     public Box $body;
     public Box $footer;
+    public Style $style;
 
-    public function __construct(Box $header, Box $body, Box $footer)
+    public function __construct(Box $header, Box $body, Box $footer, Style $style)
     {
         $this->header = $header;
         $this->body = $body;
         $this->footer = $footer;
-    
-    }
-
-    public function altText(string $altText)
-    {
-        if (Str::isEmpty($altText)) {
-            throw new UnexpectedValueException('Argument #1 ($altText) can not be empty');
-        }
-
-        return $this;
+        $this->style = $style;
     }
 
     public function size(BubbleSize $size)
@@ -51,24 +41,26 @@ class Message
         return $this;
     }
 
-    public function body(Box $body)
-    {
-        $this->body = $body;
-
-        return $this;
-    }
-
     public function toJson()
     {
         return json_encode($this->toArray());
     }
 
-    public function toArray()
+    public function __toString(): string
     {
-        return [
+        return $this->toJson();
+    }
+
+    public function toArray(): array
+    {
+        $value = [
             'type' => self::TYPE,
             'size' => $this->size,
             'body' => $this->body->toArray(),
+            'footer' => $this->footer->toArray(),
+            'styles' => $this->style->toArray(),
         ];
+
+        return array_filter($value, function($v) { return !empty($v);});
     }
 }

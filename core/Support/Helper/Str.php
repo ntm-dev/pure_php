@@ -543,17 +543,28 @@ class Str
     }
 
     /**
-     * Convert old chinese charactor to new charactor.
+     * Check string is a valid hexadecimal color code.
+     *
+     * @param  mixed  $value
+     * @return bool
+     */
+    public static function isHexadecimalColorCode($value)
+    {
+        return !!preg_match('/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/', $value);
+    }
+
+    /**
+     * Convert old chinese character to new character.
      *
      * @param  string  $value
      * @return string
      */
-    public static function convertOldChineseCharactor($value)
+    public static function convertOldChineseCharacter($value)
     {
-        $oldCharactor = ["髙", "﨑", "栁", "桺", "㐂", "圡", "𡈽", "𠮷", "槗", "𣘺", "曻", "邉", "邊", "濵"];
-        $newCharactor = ["高", "崎", "柳", "柳", "喜", "土", "土", "吉", "橋", "橋", "昇", "辺", "辺", "濱"];
+        $oldCharacter = ["髙", "﨑", "栁", "桺", "㐂", "圡", "𡈽", "𠮷", "槗", "𣘺", "曻", "邉", "邊", "濵"];
+        $newCharacter = ["高", "崎", "柳", "柳", "喜", "土", "土", "吉", "橋", "橋", "昇", "辺", "辺", "濱"];
 
-        return str_replace($oldCharactor, $newCharactor, $value);
+        return str_replace($oldCharacter, $newCharacter, $value);
     }
 
     /**

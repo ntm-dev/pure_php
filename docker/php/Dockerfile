@@ -17,3 +17,6 @@ RUN pecl install imagick \
 RUN pecl install redis \
     && docker-php-ext-enable redis
 
+RUN apt-get install -y libmemcached11 libmemcachedutil2 build-essential libmemcached-dev libz-dev \
+  && pecl install memcached \
+  && echo extension=memcached.so >> /usr/local/etc/php/conf.d/memcached.ini

@@ -2,7 +2,9 @@
 
 namespace Core\Service\Line\FlexMessage\Component;
 
-interface BoxContentInterface
+use Core\Contract\ArrayAble;
+
+interface BoxContentInterface extends ArrayAble
 {
-    public function toArray(): array;
+    //
 }
