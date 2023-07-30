@@ -4,7 +4,7 @@ namespace Core\Console;
 
 use InvalidArgumentException;
 
-final class Formater
+final class ColorFormat
 {
     public const COLORS = [
         'black' => 0,

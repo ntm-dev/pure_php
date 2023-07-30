@@ -3,13 +3,11 @@
 namespace Core\Database;
 
 use Core\Database\Model;
-use Core\Pattern\Singleton;
+use Core\Support\Helper\Arr;
 use Core\Database\Connectors\Connector;
 
 class Builder
 {
-    use Connector, Singleton;
-
     /**
      * Selected columns.
      *
@@ -36,7 +34,7 @@ class Builder
      *
      * @var array
      */
-    public $orders;
+    public $orders = [];
 
     /**
      * The maximum number of records to return.
@@ -54,6 +52,12 @@ class Builder
 
     public $model;
 
+    /** @var string */
+    private string $table;
+
+    /** @var object */
+    private static $connection;
+
     public function __construct(Model $model = null)
     {
         if ($model) {
@@ -69,9 +73,32 @@ class Builder
      */
     protected function getConnection()
     {
-        return static::$connection ?: $this->connect();
+        if (!static::$connection) {
+            static::$connection = new Connector;
+        }
+
+        return $this->connect();
     }
 
+    private function connect()
+    {
+        if (!static::$connection) {
+            static::$connection = new Connector;
+        }
+
+        if (isset($this->model->connection)) {
+            static::$connection->setConnectionName($this->model->connection);
+        }
+
+        return static::$connection->connect();
+    }
+
+    /**
+     * Set select columns.
+     *
+     * @param  array  $selects
+     * @return self
+     */
     public function select($columns = ['*'])
     {
         $this->selects = is_array($columns) ? $columns : func_get_args();
@@ -94,6 +121,56 @@ class Builder
         }
 
         return $this->addWhereQuery(...func_get_args());
+    }
+
+    /**
+     * Add multi where clause to the query.
+     *
+     * @param  array  $conditions
+     * @return $this
+     */
+    public function wheres($conditions)
+    {
+        foreach ($conditions as $key => $condition) {
+            $this->where($key, $condition);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Add multi where clause to the query.
+     *
+     * @param  array   $conditionString
+     * @param  string  $arguments
+     * @return $this
+     */
+    public function whereRaw($conditionString, $arguments = [])
+    {
+        $this->wheres[] = $conditionString;
+
+        if (!empty($arguments)) {
+            $this->addBindings($arguments);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Add a basic where clause to the query.
+     *
+     * @param  string|array  $column
+     * @param  mixed  $operator
+     * @param  mixed  $value
+     * @return $this
+     */
+    public function orWhere($column, $operator = null, $value = null)
+    {
+        if (is_array($column)) {
+            return $this->addOrWhereQuery(...$column);
+        }
+
+        return $this->addOrWhereQuery(...func_get_args());
     }
 
     /**
@@ -141,6 +218,26 @@ class Builder
     protected function addWhereQuery($column, $operator = null, $value = null)
     {
         $this->wheres[] = "$column " . ($operator ?: "=") . " ?";
+        $this->addBinding($value);
+
+        return $this;
+    }
+
+    /**
+     * Add single condition to query
+     *
+     * @param  string|array  $column
+     * @param  mixed  $operator
+     * @param  mixed  $value
+     * @return $this
+     */
+    protected function addOrWhereQuery($column, $operator = null, $value = null)
+    {
+        if (2 == func_num_args()) {
+            $value = $operator;
+            $operator = null;
+        }
+        $this->wheres[] = " OR $column " . ($operator ?: "=") . " ?";
         $this->addBinding($value);
 
         return $this;
@@ -226,20 +323,86 @@ class Builder
         return $this->fetch();
     }
 
+    /**
+     * Add an "order by" clause to the query.
+     *
+     * @param  string  $column
+     * @param  string  $direction
+     * @return $this
+     */
+    public function orderBy($column, $direction = 'ASC')
+    {
+        unset($this->orders['RAND()']);
+
+        $this->orders[$column] = $direction;
+
+        return $this;
+    }
+
+    /**
+     * Put the query's results in random order.
+     *
+     * @param  string  $seed
+     * @return $this
+     */
+    public function inRandomOrder()
+    {
+        $this->orders = ['RAND()' => ''];
+
+        return $this;
+    }
+
     private function buildSelectQuery()
     {
-        $selectStr = implode(', ', $this->selects);
+        $selectStr = $this->buildSelectColumns();
         $sql = "SELECT $selectStr FROM " . $this->getTable();
 
         if (!empty($this->wheres)) {
             $sql .= $this->buildWhereConditions();
         }
 
+        $orderString = $this->buildOrderString();
+        $sql .= $orderString ? " $orderString" : '';
+
         if ($this->limit) {
             $sql .= " LIMIT " . (is_null($this->offset) ? "" : "$this->offset,") . "{$this->limit}";
         }
 
         return $sql;
+    }
+
+    /**
+     * Build select columns.
+     *
+     * @return  string
+     */
+    protected function buildSelectColumns()
+    {
+        if (is_string($this->selects)) {
+            return $this->selects;
+        }
+
+        return implode(', ', $this->selects);
+    }
+
+    /**
+     * Build order string
+     *
+     * @return string
+     */
+    private function buildOrderString()
+    {
+        $orders = [];
+
+        foreach ($this->orders as $column => $direction) {
+            $orders[] = "$column $direction";
+        }
+
+        if (!empty($orders)) {
+            return sprintf("ORDER BY %s", implode(", ", $orders));
+        }
+
+        return '';
     }
 
     private function buildWhereConditions()
@@ -314,7 +477,21 @@ class Builder
      */
     public function exist()
     {
-        return !!$this->count();
+        return (bool)$this->count();
+    }
+
+    /**
+     * Get max value off column
+     *
+     * @param  string  $column
+     * @return int|false
+     */
+    public function max($column)
+    {
+        $this->resetBuilder();
+        $record = $this->select("MAX($column) AS __max__")->first();
+
+        return $record ? ((int)$record['__max__']) : false;
     }
 
     public function create(array $values)
@@ -342,7 +519,7 @@ class Builder
             return true;
         }
 
-        if (! is_array(reset($values))) {
+        if (!is_array(reset($values))) {
             $values = [$values];
         }
 
@@ -351,7 +528,6 @@ class Builder
             return true;
         } catch (\Throwable $th) {
             throw $th;
-            return false;
         }
     }
 
@@ -374,15 +550,17 @@ class Builder
     {
         $table = $this->getTable();
 
-        if (! is_array(reset($values))) {
+        if (!is_array(reset($values))) {
             $values = [$values];
         }
 
         $columns = implode(", ", array_keys(reset($values)));
 
-        $parameters = implode(", ", array_map(function($vals) {
+        $parameters = implode(", ", array_map(function ($vals) {
             $this->addBindings($vals, "insert");
-            return "(" . implode(", ", array_map(function() { return "?"; }, $vals)) . ")";
+            return "(" . implode(", ", array_map(function () {
+                return "?";
+            }, $vals)) . ")";
         }, $values));
 
         return "insert into $table ($columns) values $parameters";
@@ -404,5 +582,111 @@ class Builder
         }
 
         return $this->model->{$event}($this->model);
+    }
+
+    /**
+     * Reset builder
+     *
+     * @return void
+     */
+    public function resetBuilder()
+    {
+        $this->selects = ['*'];
+        $this->wheres = [];
+        $this->bindings = ['where' => []];
+        $this->orders = [];
+        $this->limit = null;
+        $this->offset = null;
+    }
+
+    public function toSql()
+    {
+        return $this->buildSelectQuery();
+    }
+
+    public function whereIn($column, $values, $boolean = 'and', $not = false)
+    {
+        $type = $not ? 'NOT IN' : 'IN';
+
+        // If the value is a query builder instance we will assume the developer wants to
+        // look for any values that exists within this given query. So we will add the
+        // query accordingly so that this query is properly executed when it is run.
+
+
+        if ($values instanceof static) {
+            return $this->whereInExistingQuery(
+                $column,
+                $values,
+                $boolean,
+                $not
+            );
+        }
+
+        if ($values instanceof \Closure) {
+            return $this->whereInSub($column, $values, $boolean, $not);
+        }
+
+        if (empty($values)) {
+            return $this;
+        }
+
+        $this->wheres[] = "`$column` $type (" . implode(", ", array_map(function () {
+            return "?";
+        }, $values)) . ")";
+
+        $this->addBindings($values, 'where');
+
+        return $this;
+    }
+
+    /**
+     * Get the current query value bindings in a flattened array.
+     *
+     * @return array
+     */
+    public function getBindings()
+    {
+        return Arr::flatten($this->bindings);
+    }
+
+    protected function whereInExistingQuery($column, $query, $boolean, $not)
+    {
+        $type = $not ? 'NotInSub' : 'InSub';
+
+        $this->wheres[] = compact('type', 'column', 'query', 'boolean');
+
+        $this->addBinding($query->getBindings(), 'where');
+
+        return $this;
+    }
+
+    /**
+     * Add a where in with a sub-select to the query.
+     *
+     * @param  string   $column
+     * @param  \Closure $callback
+     * @param  string   $boolean
+     * @param  bool     $not
+     * @return $this
+     */
+    protected function whereInSub($column, \Closure $callback, $boolean, $not)
+    {
+        $type = $not ? 'NotInSub' : 'InSub';
+
+        // To create the exists sub-select, we will actually create a query and call the
+        // provided callback with the query so the developer may set any of the query
+        // conditions they want for the in clause, then we'll put it in this array.
+        call_user_func($callback, $query = $this->newQuery());
+
+        $this->wheres[] = compact('type', 'column', 'query', 'boolean');
+
+        $this->addBinding($query->getBindings(), 'where');
+
+        return $this;
+    }
+
+    protected function newQuery()
+    {
+        return $this;
     }
 }

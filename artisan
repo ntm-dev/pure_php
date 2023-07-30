@@ -1,0 +1,8 @@
+<?php
+
+require __DIR__ . "/bootstrap/functions.php";
+require __DIR__ . "/vendor/autoload.php";
+
+/** @var \Core\Console\Kernel */
+$kernel = container(Core\Console\Kernel::class);
+$kernel->run();

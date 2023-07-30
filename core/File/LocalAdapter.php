@@ -3,6 +3,7 @@
 namespace Core\File;
 
 use RuntimeException;
+use UnexpectedValueException;
 use Core\File\Detector;
 use Core\Support\Helper\Str;
 
@@ -17,6 +18,18 @@ class LocalAdapter extends Adapter
     const PERMISSION_FILE_PRIVATE = 0600;
     const PERMISSION_DIRECTORY_PUBLIC = 0755;
     const PERMISSION_DIRECTORY_PRIVATE = 0700;
+
+    const STREAM_MODE_READ_ONLY = 'r';
+    const STREAM_MODE_READ_AND_WRITE = 'r+';
+    const STREAM_MODE_OPEN_WRITE_ONLY = 'w';
+    const STREAM_MODE_OPEN_READ_AND_WRITE = 'w+';
+    const STREAM_MODE_WRITE_APPEND_ONLY = 'a';
+    const STREAM_MODE_READ_AND_WRITE_APPEND = 'a+';
+    const STREAM_MODE_WRITE_PREPEND_ONLY = 'c';
+    const STREAM_MODE_READ_AND_WRITE_PREPEND = 'c';
+    const STREAM_MODE_WRITE_NEW_PREPEND_ONLY = 'x';
+    const STREAM_MODE_READ_AND_WRITE_NEW_PREPEND = 'x+';
+    const STREAM_MODE_CLOSE_ON_EXEC_FLAG = 'e';
 
     /** @var  string */
     private $rootPath;
@@ -35,7 +48,7 @@ class LocalAdapter extends Adapter
         if ($path) {
             $this->rootPath = $path;
         } else {
-            $this->rootPath = $this->getConfig('root');
+            $this->rootPath = $this->getConfig('disks.local.root');
         }
 
         return $this;
@@ -124,6 +137,8 @@ class LocalAdapter extends Adapter
         $to = $this->correctPath($to);
         $from = $this->correctPath($from);
 
+        $this->ensureDirectoryExists(dirname($to), self::PERMISSION_DIRECTORY_PUBLIC);
+
         if (false === @copy($from, $to)) {
             throw new RuntimeException("Unable to copy file from {$from} to {$to}");
         }
@@ -190,23 +205,99 @@ class LocalAdapter extends Adapter
         return $contents;
     }
 
+    public function writeStream($stream, $contents) 
+    {
+        if (!is_resource($stream)) {
+            throw new UnexpectedValueException("Parameter 1 must be a stream resource");
+        }
+
+        $contents = $this->fileDetector->detectContent($contents);
+
+        if (false === @fwrite($stream, (string) $contents)) {
+            throw new RuntimeException("Unable to write stream.");
+        }
+
+        return true;
+    }
+
+    public function createStream($path, $mode)
+    {
+        if (!$this->isValidStreamMode($mode)) {
+            throw new UnexpectedValueException(
+                sprintf(
+                    'Mode "%s" is not a valid stream mode. Allow mode: "%s"',
+                    $mode,
+                    implode(", ", $this->getStreamMode())
+                )
+            );
+        }
+
+        $errorMessage = '';
+
+        set_error_handler(function() use (&$errorMessage) {
+            $errorMessage = preg_replace('{^(fopen|mkdir)\(.*?\): }', '', func_get_arg(1));
+
+            return true;
+        });
+
+        $stream = fopen($path, $mode);
+
+        restore_error_handler();
+
+        if (!is_resource($stream)) {
+            throw new UnexpectedValueException(
+                sprintf(
+                    'The stream or file "%s" could not be opened with mode "%s". Message: %s',
+                    $path,
+                    $mode,
+                    $errorMessage
+                )
+            );
+        }
+
+        return $stream;
+    }
+
+    private function isValidStreamMode($mode)
+    {
+        return in_array($mode, $this->getStreamMode());
+    }
+
+    private function getStreamMode()
+    {
+        return [
+            self::STREAM_MODE_READ_ONLY,
+            self::STREAM_MODE_READ_AND_WRITE,
+            self::STREAM_MODE_OPEN_WRITE_ONLY,
+            self::STREAM_MODE_OPEN_READ_AND_WRITE,
+            self::STREAM_MODE_WRITE_APPEND_ONLY,
+            self::STREAM_MODE_READ_AND_WRITE_APPEND,
+            self::STREAM_MODE_WRITE_PREPEND_ONLY,
+            self::STREAM_MODE_READ_AND_WRITE_PREPEND,
+            self::STREAM_MODE_WRITE_NEW_PREPEND_ONLY,
+            self::STREAM_MODE_READ_AND_WRITE_NEW_PREPEND,
+            self::STREAM_MODE_CLOSE_ON_EXEC_FLAG,
+        ];
+    }
+
     public function files($directory = '', $recursive = true, $toArray = true)
     {
         $path = $this->correctPath($directory);
         $files = @array_diff(@scandir($path), array('.', '..')) ?: [];
 
         $result = [];
-        $trimLength = strlen($this->getRootPath()) + 1;
+        $rootPath = $this->getRootPath();
+        $rootPath = strlen($this->getRootPath()) + 1;
 
         foreach ($files as $file) {
             if (!$recursive && is_dir($path . DIRECTORY_SEPARATOR . $file)) {
                 continue;
             }
             if (is_dir($path . DIRECTORY_SEPARATOR . $file)) {
-                $result = array_merge($result, array_map(function($val) use ($path, $file, $trimLength) {
+                $result = array_merge($result, array_map(function($val) use ($path, $file, $rootPath) {
                     $realPath = $path . DIRECTORY_SEPARATOR . $file . DIRECTORY_SEPARATOR . $val;
-                    return substr($realPath, $trimLength);
-                }, $this->allFiles($path . DIRECTORY_SEPARATOR . $file)));
+                    return  Str::startsWith($realPath, $this->getRootPath()) ? substr($realPath, strlen($this->getRootPath()) + 1) : $realPath;
+                }, $this->files($path . DIRECTORY_SEPARATOR . $file)));
             } else {
                 $result[] = $file;
             }
@@ -229,10 +320,23 @@ class LocalAdapter extends Adapter
 
     public function allFiles($prefix = '', $recursive = true, $toArray = true)
     {
-        if (is_dir($this->correctPath($prefix))) {
-            return array_map(function ($val) use ($prefix) {
-                return $this->correctPath($prefix) . DIRECTORY_SEPARATOR . $val;
-            }, $this->files($prefix, $recursive, $toArray));
+        $correctPath = $this->correctPath($prefix);
+        if (is_dir($correctPath)) {
+            $result = [];
+            foreach ($this->files($prefix, $recursive) as $val) {
+                if (!Str::startsWith($val, $correctPath)) {
+                    $result[] = $correctPath . DIRECTORY_SEPARATOR . $val;
+                } else {
+                    $result[] = $val;
+                }
+            }
+            if ($toArray) {
+                return $result;
+            }
+
+            $generators = $this->createGenerators($result);
+
+            return $generators;
         }
 
         $arrPart = explode(DIRECTORY_SEPARATOR, $prefix);
@@ -266,7 +370,16 @@ class LocalAdapter extends Adapter
      */
     private function correctPath($path)
     {
-        $rootPath = $this->getRootPath();
+        if (file_exists($path)) {
+            return $path;
+        }
+
+        if (Str::startsWith($path, base_path())) {
+            $rootPath = base_path();
+        } else {
+            $rootPath = $this->getRootPath();
+        }
+
         if (!$path) {
             return $rootPath;
         }
@@ -413,7 +526,10 @@ class LocalAdapter extends Adapter
     {
         $prefixedLocation = $this->correctPath($path);
         if ($this->exists($prefixedLocation)) {
-            return $this->put($prefixedLocation, $this->get($prefixedLocation).$separator.$contents);
+           return $this->writeStream(
+                $this->createStream($prefixedLocation, self::STREAM_MODE_WRITE_APPEND_ONLY),
+                $separator.$contents
+            );
         }
 
         return $this->put($prefixedLocation, $contents);

@@ -21,13 +21,14 @@ class HomeController extends BaseController
     public function index(Request $request)
     {
         // throw new \Exception('abc');
-        return view('welcome');
-        $a = app()->make(View::class);
-        return View::render('love');
-        $command = new Command;
-        $max = 100000000;
+        // return view('welcome');
+        // $a = app()->make(View::class);
+        // return View::render('love');
+        // $command = new Command;
+        // $max = 100000000;
 
         $user = User::first()->toArray();
+        dd($user);
         unset($user['id']);
 
         $command->progressStart($max);

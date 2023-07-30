@@ -35,7 +35,7 @@ class Container
     protected $buildStack = [];
 
     /**
-     * Regist a class or interface to Container
+     * Register a class or interface to Container
      *
      * @param  string|object $abstract
      * @param  object|null   $concrete

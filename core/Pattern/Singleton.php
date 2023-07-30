@@ -9,7 +9,7 @@ trait Singleton
      *
      * @var static
      */
-    protected static $instance;
+    private static $instance;
 
     /**
      * Get the globally available instance.
@@ -18,10 +18,21 @@ trait Singleton
      */
     public static function getInstance()
     {
-        if (!static::$instance) {
-            return static::$instance = new static(...func_get_args());
+        if (!self::$instance) {
+            return self::$instance = new self(...func_get_args());
         }
 
-        return static::$instance;
+        return self::$instance;
+    }
+
+    /**
+     * Set the shared instance of the container.
+     *
+     * @param  self|null  $container
+     * @return static
+     */
+    public static function setInstance($instance = null)
+    {
+        return static::$instance = $instance;
     }
 }
