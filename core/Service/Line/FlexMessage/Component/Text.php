@@ -8,12 +8,13 @@ use Core\Service\Line\FlexMessage\Enum\FontSize;
 use Core\Service\Line\FlexMessage\Enum\FontStyle;
 use Core\Service\Line\FlexMessage\Enum\FontWeight;
 use Core\Service\Line\FlexMessage\Enum\Decoration;
+use Core\Service\Line\FlexMessage\Component\FlexTrait;
 use Core\Service\Line\FlexMessage\Component\ColorTrait;
 use Core\Service\Line\FlexMessage\Component\Action\ActionInterface;
 
 class Text implements BoxContentInterface
 {
-    use ColorTrait;
+    use FlexTrait, ColorTrait;
 
     private const TYPE = 'text';
 
@@ -23,13 +24,6 @@ class Text implements BoxContentInterface
      * @var string
      */
     protected string $text;
-
-    /**
-     * The ratio of the width or height of this component within the parent box.
-     *
-     * @var int
-     */
-    protected int $flex;
 
     /**
      * Wrap text.
@@ -181,23 +175,6 @@ class Text implements BoxContentInterface
     public function action(ActionInterface $action)
     {
         $this->action = $action;
-
-        return $this;
-    }
-
-    /**
-     * Set ratio of the width or height of this component within the parent box.
-     *
-     * @param  int  $ratio
-     * @return $this
-     */
-    public function flex(int $ratio)
-    {
-        if (0 > $ratio) {
-            throw new UnexpectedValueException(sprintf('%s: Argument #1 ($ratio) must be greater than or equal to 0', __METHOD__));
-        }
-
-        $this->flex = $ratio;
 
         return $this;
     }

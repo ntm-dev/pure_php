@@ -17,6 +17,11 @@ class Box implements BoxContentInterface
 
     protected LayoutType|string $layout = LayoutType::Vertical;
 
+    public function __construct(array $contents = [])
+    {
+        $this->contents = $contents;
+    }
+
     /**
      * Add content
      *
