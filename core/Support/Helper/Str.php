@@ -169,7 +169,17 @@ class Str
      */
     public static function beforeLast($subject, $search)
     {
-        return self::substr($subject, 0, self::strrpos($subject, $search));
+        if ($search === '') {
+            return $subject;
+        }
+
+        $pos = mb_strrpos($subject, $search);
+
+        if ($pos === false) {
+            return $subject;
+        }
+
+        return static::substr($subject, 0, $pos);
     }
 
     /**
