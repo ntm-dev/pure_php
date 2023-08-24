@@ -6,7 +6,7 @@ use RuntimeException;
 use Core\Support\Helper\Str;
 use Core\Support\Validation\Rule;
 use Core\Support\Validation\ValidatorInterface;
-use Core\Support\Trait\CallStaticAble;
+use Core\Support\Traits\CallStaticAble;
 
 /**
  * Validator class.

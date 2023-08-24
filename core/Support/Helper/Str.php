@@ -312,12 +312,22 @@ class Str
      * Checks if a string starts with a given substring.
      *
      * @param  string  $haystack
-     * @param  string  $needle
+     * @param  string|iterable<string>  $needles
      * @return bool
      */
-    public static function startsWith($haystack, $needle)
+    public static function startsWith($haystack, $needles)
     {
-        return (string)$needle !== '' && self::strncmp($haystack, $needle, self::strlen($needle)) === 0;
+        if (! is_iterable($needles)) {
+            $needles = [$needles];
+        }
+
+        foreach ($needles as $needle) {
+            if ((string) $needle !== '' && str_starts_with($haystack, $needle)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

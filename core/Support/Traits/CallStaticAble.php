@@ -1,6 +1,6 @@
 <?php
 
-namespace Core\Support\Trait;
+namespace Core\Support\Traits;
 
 use ReflectionMethod;
 use BadMethodCallException;

@@ -5,7 +5,7 @@ namespace Core\Support\Validation;
 use ReflectionMethod;
 use BadMethodCallException;
 use Core\Support\Helper\Str;
-use Core\Support\Trait\CallStaticAble;
+use Core\Support\Traits\CallStaticAble;
 
 /**
  * Define rule for validation.

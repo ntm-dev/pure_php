@@ -147,11 +147,26 @@ class Collection implements ArrayAccess, IteratorAggregate
     }
 
     /**
+     * Push one or more items onto the end of the collection.
+     *
+     * @param  TValue  ...$values
+     * @return $this
+     */
+    public function push(...$values)
+    {
+        foreach ($values as $value) {
+            $this->items[] = $value;
+        }
+
+        return $this;
+    }
+
+    /**
      * Get an iterator for the items.
      *
-     * @return \ArrayIteratorr<TKey, TValue>
+     * @return \ArrayIterator<TKey, TValue>
      */
-    public function getIterator()
+    public function getIterator(): Traversable
     {
         return $this->items;
     }

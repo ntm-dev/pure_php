@@ -2,6 +2,8 @@
 
 namespace Core\Support\Helper;
 
+use Traversable;
+
 class ArrayIterator implements \ArrayAccess, \IteratorAggregate
 {
     private array $items = [];
@@ -25,7 +27,7 @@ class ArrayIterator implements \ArrayAccess, \IteratorAggregate
      *
      * @return \ArrayIterator<TKey, TValue>
      */
-    public function getIterator()
+    public function getIterator(): Traversable
     {
         return new \ArrayIterator($this->items);
     }
