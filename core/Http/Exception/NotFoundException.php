@@ -13,8 +13,8 @@ class NotFoundException extends HttpException
     /* http response text */
     const HTTP_RESPONSE_TEXT = 'Page NOT FOUND!!!';
 
-    public function __construct()
+    public function __construct(string|null $message = null)
     {
-        parent::__construct(self::HTTP_RESPONSE_TEXT);
+        parent::__construct($message ?? self::HTTP_RESPONSE_TEXT);
     }
 }
