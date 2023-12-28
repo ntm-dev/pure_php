@@ -215,11 +215,13 @@ class Container
      *
      * @param  \stdClass  $instance
      * @param  string     $method
+     * @param  bool       $ignoreError
      */
-    public function resolveClassMethodDependencies($instance, $method)
+    public function resolveClassMethodDependencies($instance, $method, $ignoreError = false)
     {
         return $this->resolveDependencies(
-            (new \ReflectionMethod($instance, $method))->getParameters()
+            (new \ReflectionMethod($instance, $method))->getParameters(),
+            $ignoreError
         );
     }
 
@@ -231,7 +233,7 @@ class Container
      *
      * @throws \Exception
      */
-    protected function resolveDependencies(array $dependencies)
+    protected function resolveDependencies(array $dependencies, bool $ignoreError = false)
     {
         $results = [];
 
@@ -242,6 +244,8 @@ class Container
             } else {
                 if ($dependency->isDefaultValueAvailable()) {
                     $results[] = $dependency->getDefaultValue();
+                } elseif ($ignoreError) {
+                    continue;
                 } else {
                     throw new Exception("Can not resolve dependency {$dependency->name}");
                 }
