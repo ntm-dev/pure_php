@@ -105,3 +105,23 @@ function container($service = '', $share = false)
 
     return $container;
 }
+
+if (! function_exists('trans')) {
+    /**
+     * Translate the given message.
+     */
+    function trans(string $key, array $replace = [], string|null $locale = null, bool $strict = false): string|array|null
+    {
+        return \Core\Support\Facades\Lang::get($key, $replace, $locale) ?: ($strict ? null : $key);
+    }
+}
+
+if (! function_exists('__')) {
+    /**
+     * Alias of trans method
+     */
+    function __(string $key, array $replace = [], string|null $locale = null, bool $strict = false): string|array|null
+    {
+        return trans(...func_get_args());
+    }
+}
