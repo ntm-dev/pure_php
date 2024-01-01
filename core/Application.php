@@ -4,7 +4,7 @@ namespace Core;
 
 use Dotenv\Dotenv;
 use RuntimeException;
-use Core\Routing\Route;
+use Core\Support\Facades\Route;
 use Core\Pattern\Singleton;
 use Core\Contract\Provider;
 use Core\Support\Helper\Str;
@@ -63,7 +63,6 @@ class Application extends Container
         $this->loadConfig();
         $this->loadAlias();
         $this->loadProvider();
-        $this->loadRoutes();
     }
 
     /**
@@ -128,18 +127,6 @@ class Application extends Container
     }
 
     /**
-     * Load routes.
-     *
-     * @return void
-     */
-    private function loadRoutes()
-    {
-        require base_path() . "/routes/web.php";
-
-        $this->routes = Route::getRouteList();
-    }
-
-    /**
      * Dispatch application.
      *
      * @return mixed;
@@ -149,21 +136,17 @@ class Application extends Container
         $this->registerShutdownFunction();
 
         try {
-            $route = Route::dispatch();
+            $response = Route::resolveRoute()->run();
         } catch (\Throwable $th) {
             if (! $th instanceof HttpException) {
                 throw $th;
             }
             $response = $th->response();
         }
-
-        if ($route instanceof \Closure) {
-            $response = $route();
-        } else {
-            $controller = $this->getController($route['controller']);
-            $response = $controller->{$route['action']} (
-                ...$this->resolveClassMethodDependencies($controller, $route['action'])
-            );
+        if ($response instanceof \Core\Views\ViewInterface) {
+            Response::setContent($response->render());
+        } elseif (!$response instanceof \Core\Http\Response && !Response::isRedirection()) {
+            Response::setContent($response);
         }
 
         Response::setContent($response)->send();

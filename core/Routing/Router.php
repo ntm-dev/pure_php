@@ -1,12 +1,12 @@
 <?php
 
-namespace Support\Routing;
+namespace Core\Routing;
 
 use Closure;
 use UnexpectedValueException;
-use Support\Helper\Str;
-use Support\Facades\Request;
-use Support\Traits\MacroAble;
+use Core\Support\Helper\Str;
+use Core\Support\Facades\Request;
+use Core\Support\Traits\MacroAble;
 
 class Router
 {

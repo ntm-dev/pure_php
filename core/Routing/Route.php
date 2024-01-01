@@ -5,154 +5,181 @@ namespace Core\Routing;
 use Closure;
 use Core\Support\Facades\Request;
 use Core\Http\Exception\NotFoundException as HttpNotFoundException;
-use UnexpectedValueException;
+use Support\Validation\Validator;
 
 class Route
 {
-    private static $routes = [];
-
-    private static $groupStack = [];
-
     /**
-     * Register a new GET route with the router.
-     *
-     * @param  string $uri
-     * @param  array|string|callable|null $action
-     * @return array
+     * The route name.
      */
-    public static function get($uri, $action)
-    {
-        return self::addRoute(['GET', 'HEAD'], $uri, $action);
-    }
+    public string $name;
 
     /**
-     * Register a new POST route with the router.
-     *
-     * @param  string $uri
-     * @param  array|string|callable|null  $action
-     * @return array
+     * The URI pattern the route responds to.
      */
-    public static function post($uri, $action = null)
-    {
-        return self::addRoute('POST', $uri, $action);
-    }
+    public string $uri;
 
     /**
-     * Create a route group with shared attributes.
+     * The HTTP methods the route responds to.
+     */
+    public array $methods = [];
+
+    /**
+     * The route action array.
+     */
+    public array $action = [];
+
+    /**
+     * The array of matched parameters.
+     */
+    public ?array $parameters;
+
+    /**
+     * The controller instance.
+     */
+    public mixed $controller;
+
+    /**
+     * The validators used by the routes.
+     */
+    public static ?array $validators;
+
+    /**
+     * The $middlewares used by the routes.
+     */
+    public ?array $middlewares = [];
+
+    /**
+     * Create a new Route instance.
      *
-     * @param  string|array  $attributes
-     * @param  \Closure      $routes
      * @return void
      */
-    public static function group($attributes, Closure $routes)
+    public function __construct(array|string $methods, string $uri, Closure|array $action)
     {
-        if (is_array($attributes)) {
-            if (!isset($attributes['prefix'])) {
-                throw new UnexpectedValueException('Argument #1 ($attributes) must content prefix');
-            }
-            $prefix = $attributes['prefix'];
-        } elseif (is_string($attributes)) {
-            $prefix = $attributes;
-        } else {
-            throw new UnexpectedValueException(sprintf('Argument #1 ($attributes) must be of type array or string, %s given', gettype($attributes)));
-        }
+        $this->uri = $uri;
+        $this->methods = (array) $methods;
+        $this->action = $action;
 
-        $groupStack = static::$groupStack;
-        static::$groupStack[] = $prefix;
-        $routes();
-        static::$groupStack = $groupStack;
+        if (in_array('GET', $this->methods) && ! in_array('HEAD', $this->methods)) {
+            $this->methods[] = 'HEAD';
+        }
     }
 
     /**
-     * Concat prefix with uri.
+     * Run the route action and return the response.
      *
-     * @param  string  $uri
+     * @return mixed
+     */
+    public function run()
+    {
+        if ($this->action instanceof Closure) {
+            $closure = $this->action;
+            return $closure();
+        }
+        /** @var \App\Controllers\BaseController */
+        $controller = container($this->controller);
+        if ($this->middlewares) {
+            foreach ($this->middlewares as $middleware) {
+                $controller->middleware($middleware);
+            }
+        }
+
+        $dependencies = container()->resolveClassMethodDependencies(
+            $controller,
+            $this->action,
+            true
+        );
+
+        foreach ($dependencies as $key => $dependency) {
+            if ($dependency instanceof Validator) {
+                if (!$dependency->validate()) {
+                    return response()->json($dependency->errors())->setStatusCode(422);
+                }
+            }
+        }
+
+        return $controller->{$this->action}(...(array_merge(
+            $dependencies,
+            $this->parameters ?: []
+        )));
+    }
+
+    /**
+     * Determine if the route has parameters.
+     *
+     * @param  mixed  $parameter
+     * @return $this
+     */
+    public function addParameter($parameter)
+    {
+        $this->parameters = array_merge((array) $this->parameters, (array) $parameter);
+
+        return $this;
+    }
+
+    /**
+     * Get the key / value list of parameters for the route.
+     *
+     * @return array|null
+     */
+    public function parameters()
+    {
+        return $this->parameters;
+    }
+
+    /**
+     * Add or change the route name.
+     *
+     * @param  string  $name
+     * @return $this
+     */
+    public function name($name)
+    {
+        $this->name = $name;
+
+        return $this;
+    }
+
+    /**
+     * Get or set the middlewares attached to the route.
+     *
+     * @param  array|string|null  $middleware
+     * @return $this|array
+     */
+    public function middleware($middleware = null)
+    {
+        if (is_null($middleware)) {
+            return [];
+        }
+
+        if (! is_array($middleware)) {
+            $middleware = func_get_args();
+        }
+
+        $this->middlewares = array_merge(
+            (array) ($this->middlewares),
+            $middleware
+        );
+
+        return $this;
+    }
+
+    /**
+     * Generate the URL to a named route.
+     *
+     * @param  array  $parameters
      * @return string
      */
-    private static function prefix($uri)
+    public function generateUrl(array $parameters)
     {
-        return trim(trim(end(static::$groupStack), '/').'/'.trim($uri, '/'), '/') ?: '/';
-    }
+        $parameters = !empty($parameters) ? $parameters : $this->parameters();
 
-    /**
-     * Add a route to the underlying route.
-     *
-     * @param  array|string $methods
-     * @param  string $uri
-     * @param  array|string|callable|null $action
-     * @return array
-     */
-    public static function addRoute($methods, $uri, $action)
-    {
-        $uri = static::prefix($uri);
-        if (is_array($methods)) {
-            foreach ($methods as $method) {
-                self::$routes[$method][$uri] = $action;
-            }
-        } elseif (is_string($methods)) {
-            self::$routes[$methods][$uri] = $action;
-        }
-
-        return self::$routes;
-    }
-
-    public static function dispatch()
-    {
-        $path = ltrim(Request::getInstance()->getPathInfo(), "/") ?: '/';
-        if (!array_key_exists($path, self::getRequestMethodRouteList())) {
-            $publicLocation = public_path() . Request::getInstance()->getPathInfo();
-            if (file_exists($publicLocation)) {
-                return readfile($publicLocation);
-            }
-
-            throw new HttpNotFoundException(Request::getInstance()->getPathInfo());
-        }
-
-        return self::resolveRoute();
-    }
-
-    private static function getRequestMethodRouteList($requestMethod = '')
-    {
-        return self::$routes[$requestMethod ?: Request::method()];
-    }
-
-    public static function getRouteList()
-    {
-        return self::$routes;
-    }
-
-    private static function getRoute($uri = '')
-    {
-        return self::$routes[self::getRequestMethod()][$uri ?: (ltrim(Request::getInstance()->getPathInfo(), "/") ?: '/')];
-    }
-
-    private static function getCurrentRoute()
-    {
-        return self::getRoute();
-    }
-
-    private static function getRequestMethod()
-    {
-        return Request::method();
-    }
-
-    private static function resolveRoute()
-    {
-        $route = self::getCurrentRoute();
-
-        if ($route instanceof \Closure) {
-            return $route;
-        }
-
-        if (is_string($route)) {
-            list($controllerName, $action) = explode("@", $route);
-
-            return [
-                'controller' => "App\\Controllers\\$controllerName",
-                'action'     => $action,
-            ];
-        }
-
-        throw new \LogicException(sprintf("Can not find route [%s] or route is not vaild", Request::path()));
+        return Request::root() . "/" . preg_replace_callback(
+            "/\{([^}]+)\}/",
+            function () use (&$parameters) {
+                return array_shift($parameters);
+            },
+            $this->uri
+        );
     }
 }
