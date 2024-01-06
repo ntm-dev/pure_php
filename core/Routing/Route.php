@@ -27,12 +27,12 @@ class Route
     /**
      * The route action array.
      */
-    public array $action = [];
+    public Closure|string $action;
 
     /**
      * The array of matched parameters.
      */
-    public ?array $parameters;
+    public ?array $parameters = [];
 
     /**
      * The controller instance.
@@ -54,7 +54,7 @@ class Route
      *
      * @return void
      */
-    public function __construct(array|string $methods, string $uri, Closure|array $action)
+    public function __construct(array|string $methods, string $uri, Closure|string $action)
     {
         $this->uri = $uri;
         $this->methods = (array) $methods;

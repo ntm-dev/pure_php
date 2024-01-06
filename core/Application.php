@@ -63,6 +63,7 @@ class Application extends Container
         $this->loadConfig();
         $this->loadAlias();
         $this->loadProvider();
+        $this->loadRoutes();
     }
 
     /**
@@ -127,6 +128,16 @@ class Application extends Container
     }
 
     /**
+     * Load routes.
+     *
+     * @return void
+     */
+    private function loadRoutes()
+    {
+        require base_path("routes/web.php");
+    }
+
+    /**
      * Dispatch application.
      *
      * @return mixed;
@@ -149,7 +160,7 @@ class Application extends Container
             Response::setContent($response);
         }
 
-        Response::setContent($response)->send();
+        Response::send();
     }
 
     /**
